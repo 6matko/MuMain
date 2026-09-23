@@ -35,6 +35,7 @@ Linux/WSL with MinGW-w64.
 | CLion | [windows/clion.md](windows/clion.md) |
 | Rider | [windows/rider.md](windows/rider.md) |
 | VS Code | [windows/vscode.md](windows/vscode.md) |
+| GitHub Actions developer build | [windows/github-actions.md](windows/github-actions.md) |
 
 ### Planned
 

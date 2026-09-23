@@ -1,0 +1,135 @@
+name: Windows Developer Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'codex/**'
+    paths-ignore:
+      - 'src/bin/Data/**'
+      - 'src/bin/fonts/**'
+
+concurrency:
+  group: windows-dev-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows-dev:
+    name: Windows x64 Release (editor ON)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Activate Visual Studio developer environment
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: x64
+
+      - name: Cache FetchContent and NuGet dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            out/build/windows-dev-x64-release/_deps
+            .nuget
+          key: windows-dev-x64-release-deps-${{ hashFiles('CMakeLists.txt', 'src/CMakeLists.txt', 'ClientLibrary/**/*.csproj', 'ClientLibrary/**/*.props') }}
+          restore-keys: windows-dev-x64-release-deps-
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:/vcpkg/installed
+            C:/vcpkg/packages
+          key: vcpkg-windows-dev-x64-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-windows-dev-x64-
+
+      - name: Configure CMake
+        run: >
+          cmake --preset windows-x64-mueditor
+          -B out/build/windows-dev-x64-release
+          -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+          -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=${{ github.workspace }}/toolchain-x64.cmake
+          -DVCPKG_TARGET_TRIPLET=x64-windows
+          -DVCPKG_INSTALLED_DIR=C:/vcpkg/installed
+          -DVCPKG_MANIFEST_MODE=ON
+          -DENABLE_EDITOR=ON
+          -DENABLE_CONTROL_SOCKET=ON
+          -DMU_ENABLE_SHADER_COMPILATION=ON
+          -DGLSLANG_EXE=C:/vcpkg/installed/x64-windows/tools/glslang/glslangValidator.exe
+          -DSPIRV_CROSS_EXE=C:/vcpkg/installed/x64-windows/tools/spirv-cross/spirv-cross.exe
+          -DDXC_EXE=C:/vcpkg/installed/x64-windows/tools/directx-dxc/dxc.exe
+          -DMU_COPY_RUNTIME_ASSETS=OFF
+          -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build out/build/windows-dev-x64-release --config Release
+
+      - name: Run tests
+        run: >
+          ctest --test-dir out/build/windows-dev-x64-release --build-config Release
+          --output-on-failure
+          --no-tests=error
+
+      - name: Stage MSVC redistributable runtime
+        shell: pwsh
+        run: |
+          $runtimeDirectory = 'out/build/windows-dev-x64-release/src/Release'
+          $redistDirectory = Join-Path $env:VCToolsRedistDir 'x64'
+          $crtDirectory = @(Get-ChildItem -LiteralPath $redistDirectory -Directory -Filter 'Microsoft.VC*.CRT')
+          if ($crtDirectory.Count -ne 1) {
+            throw "Expected one MSVC runtime directory; found $($crtDirectory.Count)."
+          }
+
+          $runtimeLibraries = @(Get-ChildItem -LiteralPath $crtDirectory[0].FullName -File -Filter '*.dll')
+          if ($runtimeLibraries.Count -eq 0) {
+            throw 'The MSVC runtime directory contains no DLLs.'
+          }
+
+          Copy-Item -LiteralPath $runtimeLibraries.FullName -Destination $runtimeDirectory -Force
+
+      - name: Validate and identify runtime
+        shell: pwsh
+        run: |
+          $runtimeDirectory = 'out/build/windows-dev-x64-release/src/Release'
+          foreach ($path in @('Main.exe', 'MUnique.Client.Library.dll', 'config.ini')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $runtimeDirectory $path) -PathType Leaf)) {
+              throw "Missing required runtime file: $path"
+            }
+          }
+          if (-not (Test-Path -LiteralPath (Join-Path $runtimeDirectory 'shaders') -PathType Container)) {
+            throw 'Missing runtime shaders directory.'
+          }
+          foreach ($path in @('Data', 'fonts')) {
+            if (Test-Path -LiteralPath (Join-Path $runtimeDirectory $path)) {
+              throw "Game data must not be included in the developer artifact: $path"
+            }
+          }
+
+          @(
+            "Commit=$env:GITHUB_SHA"
+            "Run=$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+            'Configuration=Release'
+            'Editor=ON'
+            'ControlSocket=ON'
+          ) | Set-Content -LiteralPath (Join-Path $runtimeDirectory 'build-info.txt')
+
+      - name: Upload Windows developer runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: mu-client-windows-x64-release-editor-${{ github.run_number }}
+          path: out/build/windows-dev-x64-release/src/Release/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 14
