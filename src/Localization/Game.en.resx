@@ -12934,6 +12934,21 @@
   <data name="ChatCommandsTitle" xml:space="preserve">
     <value>Commands</value>
   </data>
+  <data name="EventScheduleTitle" xml:space="preserve">
+    <value>Event Schedule</value>
+  </data>
+  <data name="EventScheduleNotSupported" xml:space="preserve">
+    <value>This server does not provide event times.</value>
+  </data>
+  <data name="EventScheduleStartsIn" xml:space="preserve">
+    <value>Starts in %s</value>
+  </data>
+  <data name="EventScheduleClosesIn" xml:space="preserve">
+    <value>Closes in %s</value>
+  </data>
+  <data name="EventScheduleInProgress" xml:space="preserve">
+    <value>In progress</value>
+  </data>
   <data name="ChatCommandsNotSupported" xml:space="preserve">
     <value>This server does not offer a command list.</value>
   </data>

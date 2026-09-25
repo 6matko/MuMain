@@ -133,6 +133,13 @@ bool SEASON3B::CNewUIWindowMenu::UpdateMouseEvent()
             return false;
         }
         break;
+        case 6:
+        {
+            g_pNewUISystem->Show(SEASON3B::INTERFACE_EVENT_SCHEDULE);
+            g_pNewUISystem->Hide(SEASON3B::INTERFACE_WINDOW_MENU);
+            return false;
+        }
+        break;
         }
     }
 
@@ -222,7 +229,15 @@ void SEASON3B::CNewUIWindowMenu::RenderTexts()
     g_pRenderText->SetBgColor(0);
     g_pRenderText->SetTextColor(255, 255, 255, 255);
 
-    int iTextNumber[] = {1741, 1742, 364, 1743, 3055, 3103};
+    const wchar_t* menuText[] = {
+        I18N::Game::Lookup(1741),
+        I18N::Game::Lookup(1742),
+        I18N::Game::Lookup(364),
+        I18N::Game::Lookup(1743),
+        I18N::Game::Lookup(3055),
+        I18N::Game::Lookup(3103),
+        I18N::Game::EventScheduleTitle,
+    };
     float y = m_Pos.y + 20.f;
     for (int i = 0; i < MENU_MAX_INDEX; ++i)
     {
@@ -234,7 +249,7 @@ void SEASON3B::CNewUIWindowMenu::RenderTexts()
         {
             g_pRenderText->SetTextColor(255, 255, 255, 255);
         }
-        g_pRenderText->RenderText(m_Pos.x, y, I18N::Game::Lookup(iTextNumber[i]), 112, 0, RT3_SORT_CENTER);
+        g_pRenderText->RenderText(m_Pos.x, y, menuText[i], 112, 0, RT3_SORT_CENTER);
         y += 20.f;
     }
 }

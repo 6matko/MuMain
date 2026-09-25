@@ -41,6 +41,7 @@
 #include "GameLogic/Items/InventoryUtils.h"
 #include "UI/Legacy/UIMapName.h" // rozy
 #include "GameLogic/Commands/ChatCommandCatalog.h"
+#include "GameLogic/Events/EventScheduleCatalog.h"
 #include "UI/Legacy/UIMng.h"
 #include "GameLogic/Events/Cinematic/CDirection.h"
 #include "Character/CSParts.h"
@@ -1254,6 +1255,8 @@ BOOL ReceiveJoinMapServer(std::span<const BYTE> ReceiveBuffer)
     // ones of a previous character before asking for them again.
     GameLogic::Commands::Catalog().Reset();
     GameLogic::Commands::Catalog().RequestOnce();
+    GameLogic::Events::ScheduleCatalog().Reset();
+    GameLogic::Events::ScheduleCatalog().Request();
 
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x03 [ReceiveJoinMapServer]");
 
@@ -14193,6 +14196,10 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         if (subcode == 0x01)
         {
             GameLogic::Commands::Catalog().AddFromPacket(ReceiveBuffer, Size);
+        }
+        else if (subcode == 0x02)
+        {
+            GameLogic::Events::ScheduleCatalog().ReplaceFromPacket(ReceiveBuffer, Size);
         }
         else
         {
