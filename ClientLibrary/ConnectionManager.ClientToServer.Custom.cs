@@ -19,6 +19,34 @@ public unsafe partial class ConnectionManager
     private static readonly Xor3Encryptor Xor3Encryptor = new(0);
 
     /// <summary>
+    /// Requests the current mini-game schedule from the game server.
+    /// </summary>
+    /// <param name="handle">The handle of the connection.</param>
+    [UnmanagedCallersOnly(EntryPoint = "ConnectionManager_SendEventScheduleRequest")]
+    public static void SendEventScheduleRequest(int handle)
+    {
+        if (!Connections.TryGetValue(handle, out var connection))
+        {
+            return;
+        }
+
+        const int packetLength = 4;
+        const byte packetType = 0xC1;
+        const byte packetGroup = 0xF5;
+        const byte packetSubCode = 0x02;
+
+        connection.CreateAndSend(pipeWriter =>
+        {
+            var packet = pipeWriter.GetSpan(packetLength)[..packetLength];
+            packet[0] = packetType;
+            packet[1] = packetLength;
+            packet[2] = packetGroup;
+            packet[3] = packetSubCode;
+            return packetLength;
+        });
+    }
+
+    /// <summary>
     /// Sends a <see cref="LoginLongPassword" /> to this connection.
     /// </summary>
     /// <param name="handle">The handle of the connection.</param>

@@ -87,6 +87,7 @@ CSystem::CSystem()
     m_pMuHelperDetail = nullptr;
     m_pNewHelpWindow = nullptr;
     m_pNewChatCommandWindow = nullptr;
+    m_pNewEventScheduleWindow = nullptr;
     m_pNewItemExplanationWindow = nullptr;
     m_pNewSetItemExplanation = nullptr;
     m_pNewQuickCommandWindow = nullptr;
@@ -190,7 +191,23 @@ bool CSystem::CreateChatCommandWindow()
     return false;
 }
 
+<<<<<<< HEAD:src/source/UI/Core/WindowSystem.cpp
 bool CSystem::LoadMainSceneInterface()
+=======
+bool CNewUISystem::CreateEventScheduleWindow()
+{
+    m_pNewEventScheduleWindow = new CNewUIEventScheduleWindow;
+    if (m_pNewEventScheduleWindow->Create(m_pNewUIMng, PanelColumnX(1), 0))
+    {
+        return true;
+    }
+
+    SAFE_DELETE(m_pNewEventScheduleWindow);
+    return false;
+}
+
+bool CNewUISystem::LoadMainSceneInterface()
+>>>>>>> 2f0c023d5 (Add in-game event schedule):src/source/UI/NewUI/NewUISystem.cpp
 {
     g_MessageBox->Show(true);
     m_pNewChatLogWindow->Show(true);
@@ -369,8 +386,18 @@ bool CSystem::LoadMainSceneInterface()
         return false;
     }
 
+<<<<<<< HEAD:src/source/UI/Core/WindowSystem.cpp
     m_pNewHelpWindow = new CHelpWindow;
     if (m_pNewHelpWindow->Create(m_pNewUIMng) == false)
+=======
+    if (!CreateEventScheduleWindow())
+    {
+        return false;
+    }
+
+    m_pNewHelpWindow = new CNewUIHelpWindow;
+    if (m_pNewHelpWindow->Create(m_pNewUIMng, 0, 0) == false)
+>>>>>>> 2f0c023d5 (Add in-game event schedule):src/source/UI/NewUI/NewUISystem.cpp
     {
         return false;
     }
@@ -636,6 +663,7 @@ void CSystem::UnloadMainSceneInterface()
 
     SAFE_DELETE(m_pNewHelpWindow);
     SAFE_DELETE(m_pNewChatCommandWindow);
+    SAFE_DELETE(m_pNewEventScheduleWindow);
     SAFE_DELETE(m_pNewItemExplanationWindow);
     SAFE_DELETE(m_pNewSetItemExplanation);
     SAFE_DELETE(m_pNewQuickCommandWindow);
@@ -911,6 +939,11 @@ void CSystem::Show(DWORD dwKey)
     {
         HideAllGroupA();
         m_pNewChatCommandWindow->OpenningProcess();
+    }
+    else if (dwKey == INTERFACE_EVENT_SCHEDULE)
+    {
+        HideAllGroupA();
+        m_pNewEventScheduleWindow->OpenningProcess();
     }
     else if (dwKey == INTERFACE_GUILDINFO)
     {
@@ -1349,6 +1382,10 @@ void CSystem::Hide(DWORD dwKey)
     {
         m_pNewChatCommandWindow->ClosingProcess();
     }
+    else if (dwKey == INTERFACE_EVENT_SCHEDULE)
+    {
+        m_pNewEventScheduleWindow->ClosingProcess();
+    }
     else if (dwKey == INTERFACE_WINDOW_MENU)
     {
         g_pMainFrame->SetBtnState(MAINFRAME_BTN_WINDOW, false);
@@ -1566,6 +1603,7 @@ void CSystem::HideAllGroupA()
         INTERFACE_GUARDSMAN,
         INTERFACE_COMMAND,
         INTERFACE_COMMAND_LIST,
+        INTERFACE_EVENT_SCHEDULE,
         INTERFACE_GUILDINFO,
         INTERFACE_KANTURU2ND_ENTERNPC,
         INTERFACE_DUELWATCH,
@@ -1615,6 +1653,7 @@ void CSystem::HideAllGroupB()
         INTERFACE_GUARDSMAN,
         INTERFACE_COMMAND,
         INTERFACE_COMMAND_LIST,
+        INTERFACE_EVENT_SCHEDULE,
         INTERFACE_GUILDINFO,
         INTERFACE_KANTURU2ND_ENTERNPC,
         INTERFACE_CURSEDTEMPLE_NPC,
@@ -1643,6 +1682,25 @@ void CSystem::HideAllGroupB()
         }
     }
 }
+<<<<<<< HEAD:src/source/UI/Core/WindowSystem.cpp
+=======
+void CNewUISystem::HideGroupBeforeOpenInterface()
+{
+    DWORD dwGroupC[] = {
+        INTERFACE_PARTY,
+        INTERFACE_COMMAND,
+        INTERFACE_COMMAND_LIST,
+        INTERFACE_EVENT_SCHEDULE,
+        INTERFACE_GUILDINFO,
+        INTERFACE_GOLD_BOWMAN,
+        INTERFACE_GOLD_BOWMAN_LENA,
+        INTERFACE_GENSRANKING,
+        INTERFACE_MUHELPER,
+        INTERFACE_MUHELPER_EXT,
+        INTERFACE_MUHELPER_SKILL_LIST,
+        0,
+    };
+>>>>>>> 2f0c023d5 (Add in-game event schedule):src/source/UI/NewUI/NewUISystem.cpp
 
 void CSystem::SyncMainSceneHudVisibility()
 {
@@ -2221,7 +2279,16 @@ CChatCommandWindow* CSystem::GetUI_NewChatCommandWindow() const
     return m_pNewChatCommandWindow;
 }
 
+<<<<<<< HEAD:src/source/UI/Core/WindowSystem.cpp
 CItemExplanationWindow* CSystem::GetUI_NewItemExplanationWindow() const
+=======
+CNewUIEventScheduleWindow* CNewUISystem::GetUI_NewEventScheduleWindow() const
+{
+    return m_pNewEventScheduleWindow;
+}
+
+CNewUIItemExplanationWindow* CNewUISystem::GetUI_NewItemExplanationWindow() const
+>>>>>>> 2f0c023d5 (Add in-game event schedule):src/source/UI/NewUI/NewUISystem.cpp
 {
     return m_pNewItemExplanationWindow;
 }

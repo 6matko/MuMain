@@ -36,6 +36,24 @@ void PacketFunctions_ClientToServer_Custom::SendLogin(const wchar_t* username, c
                      clientSerial);
 }
 
+typedef void(CORECLR_DELEGATE_CALLTYPE* SendEventScheduleRequestFn)(int32_t);
+
+void PacketFunctions_ClientToServer_Custom::SendEventScheduleRequest()
+{
+    static SendEventScheduleRequestFn dotnet_SendEventScheduleRequest = nullptr;
+    if (!dotnet_SendEventScheduleRequest)
+    {
+        dotnet_SendEventScheduleRequest =
+            LoadManagedSymbol<SendEventScheduleRequestFn>("ConnectionManager_SendEventScheduleRequest");
+        if (!dotnet_SendEventScheduleRequest)
+        {
+            return;
+        }
+    }
+
+    dotnet_SendEventScheduleRequest(this->GetHandle());
+}
+
 typedef void(CORECLR_DELEGATE_CALLTYPE* SendAuthenticateExtFn)(int32_t, uint16_t, uint32_t);
 
 void PacketFunctions_ChatServer_Custom::SendAuthenticateExt(uint16_t roomId, uint32_t token)

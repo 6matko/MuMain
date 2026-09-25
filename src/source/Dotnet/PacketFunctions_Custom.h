@@ -64,6 +64,11 @@ public:
     /// </remarks>
     void SendLogin(const wchar_t* username, const wchar_t* password, const BYTE* clientVersion,
                    const BYTE* clientSerial);
+
+    /// <summary>
+    /// Requests a snapshot of the configured mini-game schedule.
+    /// </summary>
+    void SendEventScheduleRequest();
 };
 
 /// <summary>
