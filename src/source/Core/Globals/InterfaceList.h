@@ -96,6 +96,7 @@ enum INTERFACE_LIST
     INTERFACE_MUHELPER_SKILL_LIST,
     INTERFACE_SYSTEMLOGWINDOW,
     INTERFACE_COMMAND_LIST,
+    INTERFACE_EVENT_SCHEDULE,
     // CCreditWin is the pilot for migrating CUIMng's CWin-derived windows onto CManager's
     // registry. Inserted just before INTERFACE_END so every other entry's numeric value is
     // unaffected.

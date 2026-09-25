@@ -58,11 +58,7 @@
 #include "GameLogic/Items/InventoryUtils.h"
 #include "UI/Inventory/InventoryContents.h"
 #include "GameLogic/Commands/ChatCommandCatalog.h"
-<<<<<<< HEAD
-=======
 #include "GameLogic/Events/EventScheduleCatalog.h"
-#include "UI/Legacy/UIMng.h"
->>>>>>> 2f0c023d5 (Add in-game event schedule)
 #include "GameLogic/Events/Cinematic/CDirection.h"
 #include "Character/CSParts.h"
 #include "Engine/Physics/PhysicsManager.h"

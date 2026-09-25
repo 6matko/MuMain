@@ -28,3 +28,10 @@ packet containing a count followed by six-byte entries:
 The remaining value is used for scheduled and open states. A running event has
 no countdown because these events can finish early and OpenMU does not expose
 one reliable end timestamp for all mini-games.
+
+The schedule window uses the shared RmlUi theme system. It stays near the upper-right
+edge, scales with the UI preference, and scrolls when its event list exceeds the
+available height. Close it with its Close button or Esc. Both themes support it.
+The previous native panel was 190 by 220 reference pixels with four stacked rows;
+the themed panel preserves that compact list intent while allowing longer labels
+and additional rows to scroll instead of overlapping the close control.

@@ -1,71 +1,38 @@
 #pragma once
 
-#include "UI/NewUI/Dialogs/NewUIMessageBox.h"
-#include "UI/NewUI/Inventory/NewUIMyInventory.h"
-#include "UI/NewUI/NewUIManager.h"
-#include "UI/NewUI/Widgets/NewUIButton.h"
+#include "UI/Core/WindowManager.h"
+#include "UI/Events/EventScheduleRmlModel.h"
+#include "UI/RmlBridge/RmlThemedView.h"
 
-namespace SEASON3B
+#include <chrono>
+
+namespace mu::ui::window
 {
-// Displays the server-authoritative mini-game schedule. Countdown values are
-// advanced locally between compact snapshot refreshes.
-class CNewUIEventScheduleWindow : public CNewUIObj
+class CEventScheduleWindow : public CObject
 {
-    enum eIMAGE_LIST
-    {
-        IMAGE_BACK = CNewUIMessageBoxMng::IMAGE_MSGBOX_BACK,
-        IMAGE_TOP = CNewUIMyInventory::IMAGE_INVENTORY_BACK_TOP,
-        IMAGE_LEFT = CNewUIMyInventory::IMAGE_INVENTORY_BACK_LEFT,
-        IMAGE_RIGHT = CNewUIMyInventory::IMAGE_INVENTORY_BACK_RIGHT,
-        IMAGE_BOTTOM = CNewUIMyInventory::IMAGE_INVENTORY_BACK_BOTTOM,
-        IMAGE_BTN_EXIT = CNewUIMyInventory::IMAGE_INVENTORY_EXIT_BTN,
-    };
-
-    enum eLAYOUT
-    {
-        WINDOW_WIDTH = 190,
-        WINDOW_HEIGHT = 220,
-        FRAME_TOP_HEIGHT = 64,
-        FRAME_SIDE_WIDTH = 21,
-        FRAME_BOTTOM_HEIGHT = 45,
-        FRAME_SIDE_TEXTURE_HEIGHT = 320,
-        TITLE_Y = 12,
-        CONTENT_LEFT = 22,
-        CONTENT_WIDTH = WINDOW_WIDTH - 2 * CONTENT_LEFT,
-        CONTENT_TOP = 42,
-        ROW_HEIGHT = 31,
-        EXIT_BUTTON_X = 13,
-        EXIT_BUTTON_Y = WINDOW_HEIGHT - 38,
-        EXIT_BUTTON_WIDTH = 36,
-        EXIT_BUTTON_HEIGHT = 29,
-    };
-
 public:
-    CNewUIEventScheduleWindow();
-    ~CNewUIEventScheduleWindow() override;
-
-    bool Create(CNewUIManager* pNewUIMng, int x, int y);
+    ~CEventScheduleWindow() override;
+    bool Create(CManager* manager);
     void Release();
-    void SetPos(int x, int y);
-
+    void Show(bool visible) override;
     bool UpdateMouseEvent() override;
     bool UpdateKeyEvent() override;
     bool Update() override;
-    bool Render() override;
+    bool Render() override { return true; }
     float GetLayerDepth() override;
     float GetKeyEventOrder() override;
-
     void OpenningProcess();
     void ClosingProcess();
 
 private:
-    void LoadImages();
-    void UnloadImages();
-    void RenderFrame();
-    void RenderEvents();
-
-    CNewUIManager* m_pNewUIMng;
-    POINT m_Pos;
-    CNewUIButton m_BtnExit;
+    void BindModel(Rml::DataModelConstructor& constructor, EventScheduleRmlModel& model);
+    void SyncRows();
+    CManager* m_Manager = nullptr;
+    bool m_CloseRequested = false;
+    std::chrono::steady_clock::time_point m_NextUpdate{};
+    UI::RmlBridge::ThemedView<EventScheduleRmlModel> m_View{
+        "event_schedule",
+        [this](Rml::DataModelConstructor& c, EventScheduleRmlModel& model) { BindModel(c, model); },
+        {{"Data/Interface/RmlUi/event_schedule.rml"}}};
 };
-} // namespace SEASON3B
+}

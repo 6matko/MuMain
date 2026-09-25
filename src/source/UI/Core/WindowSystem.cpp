@@ -191,13 +191,10 @@ bool CSystem::CreateChatCommandWindow()
     return false;
 }
 
-<<<<<<< HEAD:src/source/UI/Core/WindowSystem.cpp
-bool CSystem::LoadMainSceneInterface()
-=======
-bool CNewUISystem::CreateEventScheduleWindow()
+bool CSystem::CreateEventScheduleWindow()
 {
-    m_pNewEventScheduleWindow = new CNewUIEventScheduleWindow;
-    if (m_pNewEventScheduleWindow->Create(m_pNewUIMng, PanelColumnX(1), 0))
+    m_pNewEventScheduleWindow = new CEventScheduleWindow;
+    if (m_pNewEventScheduleWindow->Create(m_pNewUIMng))
     {
         return true;
     }
@@ -206,8 +203,7 @@ bool CNewUISystem::CreateEventScheduleWindow()
     return false;
 }
 
-bool CNewUISystem::LoadMainSceneInterface()
->>>>>>> 2f0c023d5 (Add in-game event schedule):src/source/UI/NewUI/NewUISystem.cpp
+bool CSystem::LoadMainSceneInterface()
 {
     g_MessageBox->Show(true);
     m_pNewChatLogWindow->Show(true);
@@ -386,18 +382,13 @@ bool CNewUISystem::LoadMainSceneInterface()
         return false;
     }
 
-<<<<<<< HEAD:src/source/UI/Core/WindowSystem.cpp
-    m_pNewHelpWindow = new CHelpWindow;
-    if (m_pNewHelpWindow->Create(m_pNewUIMng) == false)
-=======
     if (!CreateEventScheduleWindow())
     {
         return false;
     }
 
-    m_pNewHelpWindow = new CNewUIHelpWindow;
-    if (m_pNewHelpWindow->Create(m_pNewUIMng, 0, 0) == false)
->>>>>>> 2f0c023d5 (Add in-game event schedule):src/source/UI/NewUI/NewUISystem.cpp
+    m_pNewHelpWindow = new CHelpWindow;
+    if (m_pNewHelpWindow->Create(m_pNewUIMng) == false)
     {
         return false;
     }
@@ -1682,25 +1673,6 @@ void CSystem::HideAllGroupB()
         }
     }
 }
-<<<<<<< HEAD:src/source/UI/Core/WindowSystem.cpp
-=======
-void CNewUISystem::HideGroupBeforeOpenInterface()
-{
-    DWORD dwGroupC[] = {
-        INTERFACE_PARTY,
-        INTERFACE_COMMAND,
-        INTERFACE_COMMAND_LIST,
-        INTERFACE_EVENT_SCHEDULE,
-        INTERFACE_GUILDINFO,
-        INTERFACE_GOLD_BOWMAN,
-        INTERFACE_GOLD_BOWMAN_LENA,
-        INTERFACE_GENSRANKING,
-        INTERFACE_MUHELPER,
-        INTERFACE_MUHELPER_EXT,
-        INTERFACE_MUHELPER_SKILL_LIST,
-        0,
-    };
->>>>>>> 2f0c023d5 (Add in-game event schedule):src/source/UI/NewUI/NewUISystem.cpp
 
 void CSystem::SyncMainSceneHudVisibility()
 {
@@ -2279,16 +2251,12 @@ CChatCommandWindow* CSystem::GetUI_NewChatCommandWindow() const
     return m_pNewChatCommandWindow;
 }
 
-<<<<<<< HEAD:src/source/UI/Core/WindowSystem.cpp
-CItemExplanationWindow* CSystem::GetUI_NewItemExplanationWindow() const
-=======
-CNewUIEventScheduleWindow* CNewUISystem::GetUI_NewEventScheduleWindow() const
+CEventScheduleWindow* CSystem::GetUI_NewEventScheduleWindow() const
 {
     return m_pNewEventScheduleWindow;
 }
 
-CNewUIItemExplanationWindow* CNewUISystem::GetUI_NewItemExplanationWindow() const
->>>>>>> 2f0c023d5 (Add in-game event schedule):src/source/UI/NewUI/NewUISystem.cpp
+CItemExplanationWindow* CSystem::GetUI_NewItemExplanationWindow() const
 {
     return m_pNewItemExplanationWindow;
 }

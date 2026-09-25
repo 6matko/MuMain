@@ -23,6 +23,7 @@ namespace
 const wchar_t* const* const kMenuLabels[] = {
     &I18N::Game::SystemEsc, &I18N::Game::HelpF1, &I18N::Game::GuildG,
     &I18N::Game::MoveM,     &I18N::Game::MapTab, &I18N::Game::GensInfoB,
+    &I18N::Game::EventScheduleTitle,
 };
 static_assert(std::size(kMenuLabels) == CWindowMenu::MENU_MAX_INDEX, "one label per menu row");
 
@@ -123,6 +124,10 @@ void mu::ui::window::CWindowMenu::RunMenuEntry(int entry)
 {
     switch (entry)
     {
+    case MENU_EVENT_SCHEDULE:
+        g_pNewUISystem->Hide(INTERFACE_WINDOW_MENU);
+        g_pNewUISystem->Toggle(INTERFACE_EVENT_SCHEDULE);
+        break;
     case MENU_SYSTEM:
         g_pNewUISystem->Hide(mu::ui::window::INTERFACE_WINDOW_MENU);
         mu::ui::window::ShowSystemMenuDialog();
