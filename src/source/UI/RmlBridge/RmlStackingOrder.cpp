@@ -31,6 +31,7 @@ struct DocumentPlacement
 // The original's GetLayerDepth() of each window and the scene whose windows the document belongs
 // to.
 constexpr DocumentPlacement Placements[] = {
+    {"event_schedule.rml", ForegroundPanelLayerDepth, MainScene},
     {"login_scene.rml", BeforeWindowsDepth, AnyScene},
     // Never drawn: it only lays out where windows go.
     {"workspace.rml", BeforeWindowsDepth, AnyScene},

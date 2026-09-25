@@ -1,0 +1,20 @@
+<rml>
+<head>
+    <title>Event Schedule</title>
+    <link type="text/rcss" href="base.rcss"/>
+    <link type="text/rcss" href="event_schedule.rcss"/>
+</head>
+<body data-model="event_schedule">
+    <div class="schedule-panel modern-panel">
+        <h2>{{title}}</h2>
+        <p data-if="!available">{{unavailable}}</p>
+        <div class="schedule-rows" data-if="available">
+            <div class="schedule-row" data-for="row : rows" data-class-open="row.open" data-class-running="row.running">
+                <div>{{row.name}}</div>
+                <div class="schedule-status">{{row.status}}</div>
+            </div>
+        </div>
+        <button class="btn" data-event-click="schedule_close">{{close}}</button>
+    </div>
+</body>
+</rml>

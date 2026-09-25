@@ -1,22 +1,22 @@
 #include "stdafx.h"
 #include "I18N/All.h"
-
-#include "UI/NewUI/Events/NewUIEventScheduleWindow.h"
-
-#include "Audio/DSPlaySound.h"
+#include "UI/Events/NewUIEventScheduleWindow.h"
+#include "UI/Core/WindowSystem.h"
+#include "UI/RmlBridge/RmlDocumentVisibility.h"
+#include "UI/RmlBridge/RmlPointer.h"
+#include "UI/RmlBridge/RmlStackingOrder.h"
+#include "Core/Utilities/StringUtils.h"
 #include "GameLogic/Events/EventScheduleCatalog.h"
-#include "UI/NewUI/NewUISystem.h"
 
-#include <string>
-
-using namespace SEASON3B;
-using GameLogic::Events::EventScheduleEntry;
-using GameLogic::Events::EventScheduleState;
-using GameLogic::Events::EventType;
-using GameLogic::Events::ScheduleCatalog;
+using namespace mu::ui::window;
+using namespace GameLogic::Events;
 
 namespace
 {
+constexpr uint32_t SecondsPerMinute = 60;
+constexpr uint32_t SecondsPerHour = 60 * SecondsPerMinute;
+constexpr auto DisplayRefreshInterval = std::chrono::seconds(1);
+constexpr float KeyEventOrder = 10.f;
 const wchar_t* GetEventName(EventType type)
 {
     switch (type)
@@ -36,9 +36,9 @@ const wchar_t* GetEventName(EventType type)
 
 std::wstring FormatDuration(uint32_t totalSeconds)
 {
-    const auto hours = totalSeconds / 3600;
-    const auto minutes = (totalSeconds % 3600) / 60;
-    const auto seconds = totalSeconds % 60;
+    const auto hours = totalSeconds / SecondsPerHour;
+    const auto minutes = (totalSeconds % SecondsPerHour) / SecondsPerMinute;
+    const auto seconds = totalSeconds % SecondsPerMinute;
     wchar_t text[32] = {};
     if (hours > 0)
     {
@@ -52,213 +52,122 @@ std::wstring FormatDuration(uint32_t totalSeconds)
     return text;
 }
 
-void SetTextColor(BYTE red, BYTE green, BYTE blue)
-{
-    g_pRenderText->SetTextColor(red, green, blue, 255);
-    g_pRenderText->SetBgColor(0);
-}
-} // namespace
 
-CNewUIEventScheduleWindow::CNewUIEventScheduleWindow()
-    : m_pNewUIMng(nullptr)
+std::string EventStatus(const EventScheduleEntry& entry)
 {
-    m_Pos.x = 0;
-    m_Pos.y = 0;
+    if (entry.State == EventScheduleState::Running)
+        return StringUtils::WideToNarrow(I18N::Game::EventScheduleInProgress);
+    const auto duration = FormatDuration(ScheduleCatalog().GetRemainingSeconds(entry));
+    const auto* format = entry.State == EventScheduleState::Open ? I18N::Game::EventScheduleClosesIn
+                                                               : I18N::Game::EventScheduleStartsIn;
+    wchar_t status[128] = {};
+    mu_swprintf_s(status, format, duration.c_str());
+    return StringUtils::WideToNarrow(status);
 }
-
-CNewUIEventScheduleWindow::~CNewUIEventScheduleWindow()
-{
-    Release();
 }
 
-bool CNewUIEventScheduleWindow::Create(CNewUIManager* pNewUIMng, int x, int y)
+CEventScheduleWindow::~CEventScheduleWindow() { Release(); }
+
+bool CEventScheduleWindow::Create(CManager* manager)
 {
-    if (pNewUIMng == nullptr)
-    {
+    if (!manager)
         return false;
-    }
-
-    m_pNewUIMng = pNewUIMng;
-    m_pNewUIMng->AddUIObj(INTERFACE_EVENT_SCHEDULE, this);
-    LoadImages();
-    SetPos(x, y);
-
-    wchar_t closeText[256] = {};
-    mu_swprintf_s(closeText, I18N::Game::CloseS, L"Esc");
-    m_BtnExit.ChangeButtonImgState(true, IMAGE_BTN_EXIT);
-    m_BtnExit.ChangeToolTipText(closeText, true);
-
+    m_Manager = manager;
+    m_Manager->AddUIObj(INTERFACE_EVENT_SCHEDULE, this);
+    m_View.Ensure();
     Show(false);
     return true;
 }
 
-void CNewUIEventScheduleWindow::Release()
+void CEventScheduleWindow::Release()
 {
-    UnloadImages();
-    if (m_pNewUIMng != nullptr)
-    {
-        m_pNewUIMng->RemoveUIObj(this);
-        m_pNewUIMng = nullptr;
-    }
+    if (m_Manager)
+        m_Manager->RemoveUIObj(this);
+    m_Manager = nullptr;
+    m_View.Release();
 }
 
-void CNewUIEventScheduleWindow::SetPos(int x, int y)
+void CEventScheduleWindow::Show(bool visible)
 {
-    m_Pos.x = x;
-    m_Pos.y = y;
-    m_BtnExit.ChangeButtonInfo(m_Pos.x + EXIT_BUTTON_X, m_Pos.y + EXIT_BUTTON_Y, EXIT_BUTTON_WIDTH,
-                               EXIT_BUTTON_HEIGHT);
+    CObject::Show(visible);
+    m_View.Ensure();
+    UI::RmlBridge::SyncDocumentVisibilityInFront(m_View.Document(), visible);
+    m_NextUpdate = {};
 }
 
-bool CNewUIEventScheduleWindow::UpdateMouseEvent()
+bool CEventScheduleWindow::UpdateMouseEvent()
 {
-    if (g_pNewUISystem->HandleFrameCornerClose(m_Pos, INTERFACE_EVENT_SCHEDULE) || m_BtnExit.UpdateMouseEvent())
+    return !UI::RmlBridge::IsPointerOver(m_View.Document());
+}
+
+bool CEventScheduleWindow::UpdateKeyEvent()
+{
+    if (!IsVisible() || !IsPress(VK_ESCAPE))
+        return true;
+    g_pNewUISystem->Hide(INTERFACE_EVENT_SCHEDULE);
+    return false;
+}
+
+bool CEventScheduleWindow::Update()
+{
+    m_View.Ensure();
+    UI::RmlBridge::SyncDocumentVisibilityInFront(m_View.Document(), IsVisible());
+    if (m_CloseRequested)
     {
+        m_CloseRequested = false;
         g_pNewUISystem->Hide(INTERFACE_EVENT_SCHEDULE);
-        PlayBuffer(SOUND_CLICK01);
-        return false;
     }
-
-    return !CheckMouseIn(m_Pos.x, m_Pos.y, WINDOW_WIDTH, WINDOW_HEIGHT);
-}
-
-bool CNewUIEventScheduleWindow::UpdateKeyEvent()
-{
-    if (g_pNewUISystem->IsVisible(INTERFACE_EVENT_SCHEDULE) && IsPress(VK_ESCAPE))
+    if (!IsVisible())
+        return true;
+    if (ScheduleCatalog().ShouldRefresh())
+        ScheduleCatalog().Request();
+    const auto now = std::chrono::steady_clock::now();
+    if (now >= m_NextUpdate)
     {
-        g_pNewUISystem->Hide(INTERFACE_EVENT_SCHEDULE);
-        PlayBuffer(SOUND_CLICK01);
-        return false;
+        SyncRows();
+        m_NextUpdate = now + DisplayRefreshInterval;
     }
-
     return true;
 }
 
-bool CNewUIEventScheduleWindow::Update()
+void CEventScheduleWindow::SyncRows()
 {
-    auto& catalog = ScheduleCatalog();
-    if (catalog.ShouldRefresh())
-    {
-        catalog.Request();
-    }
-
-    return true;
+    auto& model = m_View.GetModel();
+    model.available = ScheduleCatalog().IsAvailable();
+    model.rows.clear();
+    for (const auto& entry : ScheduleCatalog().GetEvents())
+        model.rows.push_back({StringUtils::WideToNarrow(GetEventName(entry.Type)), EventStatus(entry),
+                              entry.State == EventScheduleState::Open, entry.State == EventScheduleState::Running});
+    m_View.MarkDirty("available");
+    m_View.MarkDirty("rows");
 }
 
-bool CNewUIEventScheduleWindow::Render()
+void CEventScheduleWindow::BindModel(Rml::DataModelConstructor& c, EventScheduleRmlModel& model)
 {
-    EnableAlphaTest();
-    glColor4f(1.f, 1.f, 1.f, 1.f);
-    RenderFrame();
-
-    g_pRenderText->SetFont(g_hFontBold);
-    SetTextColor(255, 220, 120);
-    g_pRenderText->RenderText(m_Pos.x, m_Pos.y + TITLE_Y, I18N::Game::EventScheduleTitle, WINDOW_WIDTH, 0,
-                              RT3_SORT_CENTER);
-    g_pRenderText->SetFont(g_hFont);
-    RenderEvents();
-    m_BtnExit.Render();
-    DisableAlphaBlend();
-    return true;
+    model.title = StringUtils::WideToNarrow(I18N::Game::EventScheduleTitle);
+    model.unavailable = StringUtils::WideToNarrow(I18N::Game::EventScheduleNotSupported);
+    model.close = StringUtils::WideToNarrow(I18N::Game::Close388);
+    c.Bind("title", &model.title);
+    c.Bind("unavailable", &model.unavailable);
+    c.Bind("close", &model.close);
+    c.Bind("available", &model.available);
+    auto row = c.RegisterStruct<EventScheduleRow>();
+    row.RegisterMember("name", &EventScheduleRow::name);
+    row.RegisterMember("status", &EventScheduleRow::status);
+    row.RegisterMember("open", &EventScheduleRow::open);
+    row.RegisterMember("running", &EventScheduleRow::running);
+    c.RegisterArray<std::vector<EventScheduleRow>>();
+    c.Bind("rows", &model.rows);
+    c.BindEventCallback("schedule_close", [this](Rml::DataModelHandle, Rml::Event&, const Rml::VariantList&)
+                        { m_CloseRequested = true; });
 }
 
-float CNewUIEventScheduleWindow::GetLayerDepth()
+float CEventScheduleWindow::GetLayerDepth() { return UI::RmlBridge::ForegroundPanelLayerDepth; }
+float CEventScheduleWindow::GetKeyEventOrder() { return KeyEventOrder; }
+void CEventScheduleWindow::OpenningProcess()
 {
-    return UI::Layout::ForegroundPanelLayerDepth;
-}
-
-float CNewUIEventScheduleWindow::GetKeyEventOrder()
-{
-    return 10.f;
-}
-
-void CNewUIEventScheduleWindow::OpenningProcess()
-{
+    m_CloseRequested = false;
+    m_NextUpdate = {};
     ScheduleCatalog().Request();
 }
-
-void CNewUIEventScheduleWindow::ClosingProcess()
-{
-}
-
-void CNewUIEventScheduleWindow::RenderFrame()
-{
-    const auto x = static_cast<float>(m_Pos.x);
-    const auto y = static_cast<float>(m_Pos.y);
-    const auto middleHeight = static_cast<float>(WINDOW_HEIGHT - FRAME_TOP_HEIGHT - FRAME_BOTTOM_HEIGHT);
-    RenderImage(IMAGE_BACK, x, y, float(WINDOW_WIDTH), float(WINDOW_HEIGHT));
-    RenderImage(IMAGE_TOP, x, y, float(WINDOW_WIDTH), float(FRAME_TOP_HEIGHT));
-    RenderImageStretch(IMAGE_LEFT, x, y + float(FRAME_TOP_HEIGHT), float(FRAME_SIDE_WIDTH), middleHeight, 0.f, 0.f,
-                       float(FRAME_SIDE_WIDTH), float(FRAME_SIDE_TEXTURE_HEIGHT));
-    RenderImageStretch(IMAGE_RIGHT, x + float(WINDOW_WIDTH - FRAME_SIDE_WIDTH), y + float(FRAME_TOP_HEIGHT),
-                       float(FRAME_SIDE_WIDTH), middleHeight, 0.f, 0.f, float(FRAME_SIDE_WIDTH),
-                       float(FRAME_SIDE_TEXTURE_HEIGHT));
-    RenderImage(IMAGE_BOTTOM, x, y + float(WINDOW_HEIGHT - FRAME_BOTTOM_HEIGHT), float(WINDOW_WIDTH),
-                float(FRAME_BOTTOM_HEIGHT));
-}
-
-void CNewUIEventScheduleWindow::RenderEvents()
-{
-    auto& catalog = ScheduleCatalog();
-    if (!catalog.IsAvailable())
-    {
-        SetTextColor(220, 220, 220);
-        g_pRenderText->RenderText(m_Pos.x + CONTENT_LEFT, m_Pos.y + CONTENT_TOP,
-                                  I18N::Game::EventScheduleNotSupported, CONTENT_WIDTH, ROW_HEIGHT * 3);
-        return;
-    }
-
-    int row = 0;
-    for (const auto& entry : catalog.GetEvents())
-    {
-        const auto y = m_Pos.y + CONTENT_TOP + row * ROW_HEIGHT;
-        SetTextColor(235, 235, 235);
-        g_pRenderText->RenderText(m_Pos.x + CONTENT_LEFT, y, GetEventName(entry.Type), CONTENT_WIDTH, 0,
-                                  RT3_SORT_LEFT);
-
-        wchar_t status[128] = {};
-        if (entry.State == EventScheduleState::Running)
-        {
-            mu_swprintf_s(status, L"%s", I18N::Game::EventScheduleInProgress);
-            SetTextColor(255, 190, 100);
-        }
-        else
-        {
-            const auto duration = FormatDuration(catalog.GetRemainingSeconds(entry));
-            const auto* format = entry.State == EventScheduleState::Open ? I18N::Game::EventScheduleClosesIn
-                                                                         : I18N::Game::EventScheduleStartsIn;
-            mu_swprintf_s(status, format, duration.c_str());
-            if (entry.State == EventScheduleState::Open)
-            {
-                SetTextColor(120, 255, 140);
-            }
-            else
-            {
-                SetTextColor(170, 210, 255);
-            }
-        }
-
-        g_pRenderText->RenderText(m_Pos.x + CONTENT_LEFT, y + 14, status, CONTENT_WIDTH, 0, RT3_SORT_RIGHT);
-        ++row;
-    }
-}
-
-void CNewUIEventScheduleWindow::LoadImages()
-{
-    LoadBitmap(L"Interface/newui_msgbox_back.jpg", IMAGE_BACK, GL_LINEAR);
-    LoadBitmap(L"Interface/newui_item_back01.tga", IMAGE_TOP, GL_LINEAR);
-    LoadBitmap(L"Interface/newui_item_back02-L.tga", IMAGE_LEFT, GL_LINEAR);
-    LoadBitmap(L"Interface/newui_item_back02-R.tga", IMAGE_RIGHT, GL_LINEAR);
-    LoadBitmap(L"Interface/newui_item_back03.tga", IMAGE_BOTTOM, GL_LINEAR);
-    LoadBitmap(L"Interface/newui_exit_00.tga", IMAGE_BTN_EXIT, GL_LINEAR);
-}
-
-void CNewUIEventScheduleWindow::UnloadImages()
-{
-    DeleteBitmap(IMAGE_BACK);
-    DeleteBitmap(IMAGE_TOP);
-    DeleteBitmap(IMAGE_LEFT);
-    DeleteBitmap(IMAGE_RIGHT);
-    DeleteBitmap(IMAGE_BOTTOM);
-    DeleteBitmap(IMAGE_BTN_EXIT);
-}
+void CEventScheduleWindow::ClosingProcess() { m_View.Hide(); }
