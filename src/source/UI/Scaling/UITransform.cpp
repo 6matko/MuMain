@@ -19,12 +19,6 @@ constexpr float kMaximumHudScale = 2.0f;
 // ponytail: 2.25x dock ceiling; adjust only from rebuilt native screenshots.
 constexpr float kMaximumDockScale = 2.25f;
 constexpr float kMaximumTypographyScale = 2.25f;
-constexpr int kNormalFontPointSize = 11;
-constexpr int kMaximumNormalFontPointSize = 16;
-constexpr int kBigFontPointSize = 22;
-constexpr int kMaximumBigFontPointSize = 32;
-constexpr int kFixedFontPointSize = 13;
-constexpr int kMaximumFixedFontPointSize = 18;
 // ponytail: one gameplay window; move scale into a window context if multi-window rendering is added.
 float g_windowContentScale = 1.0f;
 
@@ -35,21 +29,6 @@ float g_windowContentScale = 1.0f;
 float UIScalePercentMultiplier()
 {
     return static_cast<float>(GameConfig::GetInstance().GetUIScalePercent()) / 100.0f;
-}
-
-struct FontPointRange
-{
-    int minimum;
-    int maximum;
-};
-
-FontPointRange GetFontPointRange(UI::Scaling::FontRole role)
-{
-    if (role == UI::Scaling::FontRole::Big)
-        return {kBigFontPointSize, kMaximumBigFontPointSize};
-    if (role == UI::Scaling::FontRole::Fixed)
-        return {kFixedFontPointSize, kMaximumFixedFontPointSize};
-    return {kNormalFontPointSize, kMaximumNormalFontPointSize};
 }
 
 int RoundedBottomHudTop(int windowWidth, int windowHeight)
@@ -228,16 +207,6 @@ float UI::Scaling::LogicalY(const Transform& transform, float windowY)
     return (windowY - transform.offsetY) / transform.scaleY;
 }
 
-int UI::Scaling::MinimumFontPointSize(FontRole role)
-{
-    return GetFontPointRange(role).minimum;
-}
-
-int UI::Scaling::MaximumFontPointSize(FontRole role)
-{
-    return GetFontPointRange(role).maximum;
-}
-
 int UI::Scaling::CachedFontPointSize(FontRole role)
 {
     return std::max(static_cast<int>(std::lround(MaximumFontPointSize(role) * GetWindowContentScale())), 1);
@@ -245,12 +214,13 @@ int UI::Scaling::CachedFontPointSize(FontRole role)
 
 int UI::Scaling::FontPointSize(FontRole role, const Transform& transform)
 {
-    const FontPointRange range = GetFontPointRange(role);
+    const int minimum = MinimumFontPointSize(role);
+    const int maximum = MaximumFontPointSize(role);
     const float typographyScale = transform.typographyScale / GetWindowContentScale();
     const float growth =
         std::clamp((typographyScale - 1.0f) / (kMaximumTypographyScale - 1.0f), 0.0f, 1.0f);
-    const float pointSize = static_cast<float>(range.minimum) +
-                            static_cast<float>(range.maximum - range.minimum) * growth;
+    const float pointSize = static_cast<float>(minimum) +
+                            static_cast<float>(maximum - minimum) * growth;
     return static_cast<int>(std::lround(pointSize));
 }
 
