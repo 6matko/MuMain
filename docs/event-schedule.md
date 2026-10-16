@@ -1,7 +1,7 @@
 # Event schedule
 
-The Window menu contains an **Event Schedule** entry when the player is in the
-game. It lists Blood Castle, Devil Square, Chaos Castle, and Kanturu when those
+A compact **Event Schedule** panel appears automatically near the top-right of
+the HUD during gameplay. It lists Blood Castle, Devil Square, Chaos Castle, and Kanturu when those
 events are configured by the connected OpenMU server.
 
 Each row has one of these states:
@@ -13,7 +13,7 @@ Each row has one of these states:
 The server is authoritative. The client requests an atomic snapshot through
 the OpenMU extension packet group (`F5:02`), ticks the received number of
 seconds locally, and refreshes it every 30 seconds or when a countdown reaches
-zero. An older server simply leaves the window in the unsupported state.
+zero. On an older server without schedule support, the panel remains hidden.
 
 ## Protocol
 
@@ -29,9 +29,8 @@ The remaining value is used for scheduled and open states. A running event has
 no countdown because these events can finish early and OpenMU does not expose
 one reliable end timestamp for all mini-games.
 
-The schedule window uses the shared RmlUi theme system. It stays near the upper-right
-edge, scales with the UI preference, and scrolls when its event list exceeds the
-available height. Close it with its Close button or Esc. Both themes support it.
-The previous native panel was 190 by 220 reference pixels with four stacked rows;
-the themed panel preserves that compact list intent while allowing longer labels
-and additional rows to scroll instead of overlapping the close control.
+The HUD panel sits below the top-right system buttons and scales with the UI
+preference in both themes. It is click-through and does not capture Esc or other
+keys. Opening inventory or other windows does not dismiss it. It is hidden during
+loading and outside gameplay, and remains hidden if the server has no schedule
+support or returns no configured events. There is no separate window or menu entry.

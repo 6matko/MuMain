@@ -16,8 +16,6 @@ struct EventScheduleRow
 struct EventScheduleRmlModel
 {
     std::string title;
-    std::string unavailable;
-    std::string close;
     bool available = false;
     std::vector<EventScheduleRow> rows;
 };

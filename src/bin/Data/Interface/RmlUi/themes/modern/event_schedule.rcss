@@ -1,20 +1,18 @@
 .schedule-panel {
     position: absolute;
-    right: 20dp;
-    top: 40dp;
+    right: 12dp;
+    top: 36dp;
     width: 190dp;
-    max-height: 80%;
-    padding: 14dp;
-    background-color: #171c24;
+    padding: 8dp 10dp;
+    background-color: rgba(15, 16, 13, 160);
     color: #eeeeee;
-    border: 1dp #667080;
-    font-size: 12dp;
-    pointer-events: auto;
+    font-family: "token(font-body)";
+    font-size: 11dp;
+    pointer-events: none;
 }
-.schedule-panel h2 { font-size: 14dp; color: #ffdc78; margin-bottom: 14dp; }
-.schedule-rows { max-height: 240dp; overflow-y: auto; }
-.schedule-row { margin-bottom: 10dp; }
+.schedule-panel h2 { font-size: 12dp; color: #ffdc78; margin-bottom: 8dp; }
+.schedule-rows { display: block; }
+.schedule-row { display: block; margin-bottom: 6dp; }
 .schedule-status { text-align: right; color: #aad2ff; }
 .schedule-row.open .schedule-status { color: #78ff8c; }
 .schedule-row.running .schedule-status { color: #ffbe64; }
-.schedule-panel .btn { margin-top: 12dp; width: 100%; height: 26dp; }

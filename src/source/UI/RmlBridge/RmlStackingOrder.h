@@ -11,6 +11,9 @@
 // See docs/rmlui-ui-system/building-new-ui.md, "Stacking order".
 namespace UI::RmlBridge
 {
+// Passive schedule above world labels, below the top-right buttons and gameplay windows.
+inline constexpr float EventScheduleHudLayerDepth = 1.04f;
+
 // The panels that stand over the HUD and its logs (the command windows).
 inline constexpr float ForegroundPanelLayerDepth = 10.65f;
 

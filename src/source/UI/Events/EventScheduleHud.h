@@ -8,27 +8,24 @@
 
 namespace mu::ui::window
 {
-class CEventScheduleWindow : public CObject
+class CEventScheduleHud : public CObject
 {
 public:
-    ~CEventScheduleWindow() override;
+    ~CEventScheduleHud() override;
     bool Create(CManager* manager);
     void Release();
-    void Show(bool visible) override;
-    bool UpdateMouseEvent() override;
-    bool UpdateKeyEvent() override;
+    void SyncDocVisibility(bool sceneAllowsShow);
+    bool UpdateMouseEvent() override { return true; }
+    bool UpdateKeyEvent() override { return true; }
     bool Update() override;
     bool Render() override { return true; }
     float GetLayerDepth() override;
-    float GetKeyEventOrder() override;
-    void OpenningProcess();
-    void ClosingProcess();
 
 private:
     void BindModel(Rml::DataModelConstructor& constructor, EventScheduleRmlModel& model);
     void SyncRows();
     CManager* m_Manager = nullptr;
-    bool m_CloseRequested = false;
+    bool m_SceneAllowsShow = false;
     std::chrono::steady_clock::time_point m_NextUpdate{};
     UI::RmlBridge::ThemedView<EventScheduleRmlModel> m_View{
         "event_schedule",

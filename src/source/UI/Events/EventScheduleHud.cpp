@@ -1,9 +1,7 @@
 #include "stdafx.h"
 #include "I18N/All.h"
-#include "UI/Events/NewUIEventScheduleWindow.h"
-#include "UI/Core/WindowSystem.h"
+#include "UI/Events/EventScheduleHud.h"
 #include "UI/RmlBridge/RmlDocumentVisibility.h"
-#include "UI/RmlBridge/RmlPointer.h"
 #include "UI/RmlBridge/RmlStackingOrder.h"
 #include "Core/Utilities/StringUtils.h"
 #include "GameLogic/Events/EventScheduleCatalog.h"
@@ -16,7 +14,6 @@ namespace
 constexpr uint32_t SecondsPerMinute = 60;
 constexpr uint32_t SecondsPerHour = 60 * SecondsPerMinute;
 constexpr auto DisplayRefreshInterval = std::chrono::seconds(1);
-constexpr float KeyEventOrder = 10.f;
 const wchar_t* GetEventName(EventType type)
 {
     switch (type)
@@ -66,20 +63,20 @@ std::string EventStatus(const EventScheduleEntry& entry)
 }
 }
 
-CEventScheduleWindow::~CEventScheduleWindow() { Release(); }
+CEventScheduleHud::~CEventScheduleHud() { Release(); }
 
-bool CEventScheduleWindow::Create(CManager* manager)
+bool CEventScheduleHud::Create(CManager* manager)
 {
     if (!manager)
         return false;
     m_Manager = manager;
     m_Manager->AddUIObj(INTERFACE_EVENT_SCHEDULE, this);
     m_View.Ensure();
-    Show(false);
+    Show(true);
     return true;
 }
 
-void CEventScheduleWindow::Release()
+void CEventScheduleHud::Release()
 {
     if (m_Manager)
         m_Manager->RemoveUIObj(this);
@@ -87,38 +84,20 @@ void CEventScheduleWindow::Release()
     m_View.Release();
 }
 
-void CEventScheduleWindow::Show(bool visible)
+void CEventScheduleHud::SyncDocVisibility(bool sceneAllowsShow)
 {
-    CObject::Show(visible);
+    m_SceneAllowsShow = sceneAllowsShow;
     m_View.Ensure();
-    UI::RmlBridge::SyncDocumentVisibilityInFront(m_View.Document(), visible);
-    m_NextUpdate = {};
+    const auto& catalog = ScheduleCatalog();
+    const bool visible = sceneAllowsShow && IsVisible() && catalog.IsAvailable() && !catalog.GetEvents().empty();
+    UI::RmlBridge::SyncDocumentVisibilityBehind(m_View.Document(), visible);
 }
 
-bool CEventScheduleWindow::UpdateMouseEvent()
+bool CEventScheduleHud::Update()
 {
-    return !UI::RmlBridge::IsPointerOver(m_View.Document());
-}
-
-bool CEventScheduleWindow::UpdateKeyEvent()
-{
-    if (!IsVisible() || !IsPress(VK_ESCAPE))
+    if (!m_SceneAllowsShow || !IsVisible())
         return true;
-    g_pNewUISystem->Hide(INTERFACE_EVENT_SCHEDULE);
-    return false;
-}
-
-bool CEventScheduleWindow::Update()
-{
     m_View.Ensure();
-    UI::RmlBridge::SyncDocumentVisibilityInFront(m_View.Document(), IsVisible());
-    if (m_CloseRequested)
-    {
-        m_CloseRequested = false;
-        g_pNewUISystem->Hide(INTERFACE_EVENT_SCHEDULE);
-    }
-    if (!IsVisible())
-        return true;
     if (ScheduleCatalog().ShouldRefresh())
         ScheduleCatalog().Request();
     const auto now = std::chrono::steady_clock::now();
@@ -130,7 +109,7 @@ bool CEventScheduleWindow::Update()
     return true;
 }
 
-void CEventScheduleWindow::SyncRows()
+void CEventScheduleHud::SyncRows()
 {
     auto& model = m_View.GetModel();
     model.available = ScheduleCatalog().IsAvailable();
@@ -142,14 +121,10 @@ void CEventScheduleWindow::SyncRows()
     m_View.MarkDirty("rows");
 }
 
-void CEventScheduleWindow::BindModel(Rml::DataModelConstructor& c, EventScheduleRmlModel& model)
+void CEventScheduleHud::BindModel(Rml::DataModelConstructor& c, EventScheduleRmlModel& model)
 {
     model.title = StringUtils::WideToNarrow(I18N::Game::EventScheduleTitle);
-    model.unavailable = StringUtils::WideToNarrow(I18N::Game::EventScheduleNotSupported);
-    model.close = StringUtils::WideToNarrow(I18N::Game::Close388);
     c.Bind("title", &model.title);
-    c.Bind("unavailable", &model.unavailable);
-    c.Bind("close", &model.close);
     c.Bind("available", &model.available);
     auto row = c.RegisterStruct<EventScheduleRow>();
     row.RegisterMember("name", &EventScheduleRow::name);
@@ -158,16 +133,6 @@ void CEventScheduleWindow::BindModel(Rml::DataModelConstructor& c, EventSchedule
     row.RegisterMember("running", &EventScheduleRow::running);
     c.RegisterArray<std::vector<EventScheduleRow>>();
     c.Bind("rows", &model.rows);
-    c.BindEventCallback("schedule_close", [this](Rml::DataModelHandle, Rml::Event&, const Rml::VariantList&)
-                        { m_CloseRequested = true; });
 }
 
-float CEventScheduleWindow::GetLayerDepth() { return UI::RmlBridge::ForegroundPanelLayerDepth; }
-float CEventScheduleWindow::GetKeyEventOrder() { return KeyEventOrder; }
-void CEventScheduleWindow::OpenningProcess()
-{
-    m_CloseRequested = false;
-    m_NextUpdate = {};
-    ScheduleCatalog().Request();
-}
-void CEventScheduleWindow::ClosingProcess() { m_View.Hide(); }
+float CEventScheduleHud::GetLayerDepth() { return UI::RmlBridge::EventScheduleHudLayerDepth; }
