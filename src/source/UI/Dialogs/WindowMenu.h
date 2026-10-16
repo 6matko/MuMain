@@ -27,7 +27,6 @@ public:
         MENU_MOVE,
         MENU_MINIMAP,
         MENU_GENS,
-        MENU_EVENT_SCHEDULE,
         MENU_MAX_INDEX,
     };
 

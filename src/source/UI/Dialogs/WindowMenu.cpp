@@ -20,7 +20,7 @@ using namespace mu::ui::window;
 namespace
 {
 // The row labels, top to bottom (CWindowMenu::MenuEntry order).
-constexpr int kMenuTextIds[CWindowMenu::MENU_MAX_INDEX] = {1741, 1742, 364, 1743, 3055, 3103, 0};
+constexpr int kMenuTextIds[CWindowMenu::MENU_MAX_INDEX] = {1741, 1742, 364, 1743, 3055, 3103};
 
 template <typename Model>
 void SyncFloat(RmlModelBinder<Model>& binder, float Model::* field, const char* name, float value)
@@ -119,10 +119,6 @@ void mu::ui::window::CWindowMenu::RunMenuEntry(int entry)
 {
     switch (entry)
     {
-    case MENU_EVENT_SCHEDULE:
-        g_pNewUISystem->Hide(INTERFACE_WINDOW_MENU);
-        g_pNewUISystem->Toggle(INTERFACE_EVENT_SCHEDULE);
-        break;
     case MENU_SYSTEM:
         g_pNewUISystem->Hide(mu::ui::window::INTERFACE_WINDOW_MENU);
         mu::ui::window::ShowSystemMenuDialog();
@@ -178,7 +174,7 @@ void mu::ui::window::CWindowMenu::BindRmlModel(Rml::DataModelConstructor& c, Win
 
     model.rows.clear();
     for (int i = 0; i < MENU_MAX_INDEX; ++i)
-        model.rows.push_back({StringUtils::WideToNarrow(i == MENU_EVENT_SCHEDULE ? I18N::Game::EventScheduleTitle : I18N::Game::Lookup(kMenuTextIds[i])), i});
+        model.rows.push_back({StringUtils::WideToNarrow(I18N::Game::Lookup(kMenuTextIds[i])), i});
 }
 
 void mu::ui::window::CWindowMenu::BuildRmlUi()

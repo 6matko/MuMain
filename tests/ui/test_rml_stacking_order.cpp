@@ -138,3 +138,11 @@ TEST_CASE("scene messages cover scene windows and remain below blocking overlays
     CHECK(Depth("msg_win.rml") < Depth("loading.rml"));
     CHECK(Depth("msg_win.rml") < Depth("reconnect_dialog.rml"));
 }
+
+TEST_CASE("event schedule stays in the gameplay HUD below interactive windows [ui][stacking]")
+{
+    CHECK(SceneForDocument("event_schedule.rml") == DocumentScene::Main);
+    CHECK(Depth("event_schedule.rml") > Depth("world_labels.rml"));
+    CHECK(Depth("event_schedule.rml") < Depth("main_frame_top.rml"));
+    CHECK(Depth("event_schedule.rml") < Depth("my_inventory.rml"));
+}

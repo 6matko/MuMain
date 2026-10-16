@@ -3,6 +3,7 @@
 
 #include "RmlLayoutFixture.h"
 #include "../../src/ThirdParty/RmlUi/Source/Core/DecoratorTiled.h"
+#include <RmlUi/Core/ComputedValues.h>
 #include <RmlUi/Core/FontEngineInterface.h>
 #include <RmlUi/Core/Mesh.h>
 #include <RmlUi/Core/TextShapingContext.h>
@@ -100,6 +101,46 @@ TEST_CASE("chat fill respects theme insets independently of modal backdrop style
         fixture.Refresh();
         CHECK(fill->GetBox().GetSize(Rml::BoxArea::Border).x == doctest::Approx(261.f));
         CHECK(fill->GetBox().GetSize(Rml::BoxArea::Border).y == doctest::Approx(90.f));
+        document->Close();
+    }
+}
+
+TEST_CASE("event schedule HUD stays top-right and click-through across themes and scales [ui][styling]")
+{
+    UI::Tests::RmlLayoutFixture fixture;
+    const Rml::Vector2i viewports[] = {{640, 480}, {1280, 720}, {3440, 1440}};
+    for (const std::string theme : {"legacy", "modern"})
+    for (const auto viewport : viewports)
+    for (const int percent : {75, 100, 150})
+    {
+        CAPTURE(theme);
+        CAPTURE(viewport.x);
+        CAPTURE(viewport.y);
+        CAPTURE(percent);
+        fixture.Configure(viewport, percent);
+        auto* document = fixture.Load(theme, "event_schedule");
+        REQUIRE(document);
+        auto* panel = document->QuerySelector(".schedule-panel");
+        auto* rows = document->QuerySelector(".schedule-rows");
+        REQUIRE(panel);
+        REQUIRE(rows);
+        auto* title = document->QuerySelector("h2");
+        REQUIRE(title);
+        title->SetInnerRML("Event Schedule");
+        rows->SetInnerRML(R"(<div class="schedule-row">Blood Castle<div class="schedule-status">Starts in 12:34:56</div></div>
+            <div class="schedule-row">Devil Square<div class="schedule-status">Closes in 02:15</div></div>
+            <div class="schedule-row">Chaos Castle<div class="schedule-status">In progress</div></div>
+            <div class="schedule-row">Kanturu<div class="schedule-status">Starts in 00:45</div></div>)");
+        fixture.Refresh();
+        const auto position = panel->GetAbsoluteOffset(Rml::BoxArea::Border);
+        const auto size = panel->GetBox().GetSize(Rml::BoxArea::Border);
+        CHECK(position.x > viewport.x / 2.f);
+        CHECK(position.y > 0.f);
+        CHECK(position.y < viewport.y / 4.f);
+        CHECK(position.x + size.x < viewport.x);
+        CHECK(position.y + size.y < viewport.y);
+        CHECK(panel->GetComputedValues().pointer_events() == Rml::Style::PointerEvents::None);
+        CHECK(document->QuerySelector("button") == nullptr);
         document->Close();
     }
 }

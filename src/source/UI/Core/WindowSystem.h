@@ -44,7 +44,7 @@
 #include "UI/HUD/MuHelperBar.h"
 #include "UI/Dialogs/HelpWindow.h"
 #include "UI/Dialogs/ChatCommandWindow.h"
-#include "UI/Events/NewUIEventScheduleWindow.h"
+#include "UI/Events/EventScheduleHud.h"
 #include "UI/Inventory/ItemExplanationWindow.h"
 #include "UI/Inventory/SetItemExplanation.h"
 #include "UI/HUD/QuickCommandWindow.h"
@@ -189,7 +189,7 @@ namespace mu::ui::window
         COptionWindow* m_pNewOptionWindow;
         CHelpWindow* m_pNewHelpWindow;
         CChatCommandWindow* m_pNewChatCommandWindow;
-        CEventScheduleWindow* m_pNewEventScheduleWindow;
+        CEventScheduleHud* m_pEventScheduleHud;
         CItemExplanationWindow* m_pNewItemExplanationWindow;
         CSetItemExplanation* m_pNewSetItemExplanation;
         CQuickCommandWindow* m_pNewQuickCommandWindow;
@@ -232,7 +232,7 @@ namespace mu::ui::window
         CGenericMenuDialog* m_pGenericMenuDialog;
 
         bool CreateChatCommandWindow();
-        bool CreateEventScheduleWindow();
+        bool CreateEventScheduleHud();
 
     public:
         CChatInputBox* GetUI_NewChatInputBox() const;
@@ -278,7 +278,6 @@ namespace mu::ui::window
         COptionWindow* GetUI_NewOptionWindow() const;
         CHelpWindow* GetUI_NewHelpWindow() const;
         CChatCommandWindow* GetUI_NewChatCommandWindow() const;
-        CEventScheduleWindow* GetUI_NewEventScheduleWindow() const;
         CItemExplanationWindow* GetUI_NewItemExplanationWindow() const;
         CSetItemExplanation* GetUI_NewSetItemExplanation() const;
         CQuickCommandWindow* GetUI_NewQuickCommandWindow() const;

@@ -87,7 +87,7 @@ CSystem::CSystem()
     m_pMuHelperDetail = nullptr;
     m_pNewHelpWindow = nullptr;
     m_pNewChatCommandWindow = nullptr;
-    m_pNewEventScheduleWindow = nullptr;
+    m_pEventScheduleHud = nullptr;
     m_pNewItemExplanationWindow = nullptr;
     m_pNewSetItemExplanation = nullptr;
     m_pNewQuickCommandWindow = nullptr;
@@ -191,15 +191,15 @@ bool CSystem::CreateChatCommandWindow()
     return false;
 }
 
-bool CSystem::CreateEventScheduleWindow()
+bool CSystem::CreateEventScheduleHud()
 {
-    m_pNewEventScheduleWindow = new CEventScheduleWindow;
-    if (m_pNewEventScheduleWindow->Create(m_pNewUIMng))
+    m_pEventScheduleHud = new CEventScheduleHud;
+    if (m_pEventScheduleHud->Create(m_pNewUIMng))
     {
         return true;
     }
 
-    SAFE_DELETE(m_pNewEventScheduleWindow);
+    SAFE_DELETE(m_pEventScheduleHud);
     return false;
 }
 
@@ -382,7 +382,7 @@ bool CSystem::LoadMainSceneInterface()
         return false;
     }
 
-    if (!CreateEventScheduleWindow())
+    if (!CreateEventScheduleHud())
     {
         return false;
     }
@@ -654,7 +654,7 @@ void CSystem::UnloadMainSceneInterface()
 
     SAFE_DELETE(m_pNewHelpWindow);
     SAFE_DELETE(m_pNewChatCommandWindow);
-    SAFE_DELETE(m_pNewEventScheduleWindow);
+    SAFE_DELETE(m_pEventScheduleHud);
     SAFE_DELETE(m_pNewItemExplanationWindow);
     SAFE_DELETE(m_pNewSetItemExplanation);
     SAFE_DELETE(m_pNewQuickCommandWindow);
@@ -930,11 +930,6 @@ void CSystem::Show(DWORD dwKey)
     {
         HideAllGroupA();
         m_pNewChatCommandWindow->OpenningProcess();
-    }
-    else if (dwKey == INTERFACE_EVENT_SCHEDULE)
-    {
-        HideAllGroupA();
-        m_pNewEventScheduleWindow->OpenningProcess();
     }
     else if (dwKey == INTERFACE_GUILDINFO)
     {
@@ -1373,10 +1368,6 @@ void CSystem::Hide(DWORD dwKey)
     {
         m_pNewChatCommandWindow->ClosingProcess();
     }
-    else if (dwKey == INTERFACE_EVENT_SCHEDULE)
-    {
-        m_pNewEventScheduleWindow->ClosingProcess();
-    }
     else if (dwKey == INTERFACE_WINDOW_MENU)
     {
         g_pMainFrame->SetBtnState(MAINFRAME_BTN_WINDOW, false);
@@ -1594,7 +1585,6 @@ void CSystem::HideAllGroupA()
         INTERFACE_GUARDSMAN,
         INTERFACE_COMMAND,
         INTERFACE_COMMAND_LIST,
-        INTERFACE_EVENT_SCHEDULE,
         INTERFACE_GUILDINFO,
         INTERFACE_KANTURU2ND_ENTERNPC,
         INTERFACE_DUELWATCH,
@@ -1644,7 +1634,6 @@ void CSystem::HideAllGroupB()
         INTERFACE_GUARDSMAN,
         INTERFACE_COMMAND,
         INTERFACE_COMMAND_LIST,
-        INTERFACE_EVENT_SCHEDULE,
         INTERFACE_GUILDINFO,
         INTERFACE_KANTURU2ND_ENTERNPC,
         INTERFACE_CURSEDTEMPLE_NPC,
@@ -1683,6 +1672,8 @@ void CSystem::SyncMainSceneHudVisibility()
 
     if (m_pMuHelperBar)
         m_pMuHelperBar->SyncDocVisibility(sceneAllowsShow);
+    if (m_pEventScheduleHud)
+        m_pEventScheduleHud->SyncDocVisibility(sceneAllowsShow);
     if (m_pBuffStrip)
         m_pBuffStrip->SyncDocVisibility(sceneAllowsShow);
     if (m_pNewItemEnduranceInfo)
@@ -2249,11 +2240,6 @@ CHelpWindow* CSystem::GetUI_NewHelpWindow() const
 CChatCommandWindow* CSystem::GetUI_NewChatCommandWindow() const
 {
     return m_pNewChatCommandWindow;
-}
-
-CEventScheduleWindow* CSystem::GetUI_NewEventScheduleWindow() const
-{
-    return m_pNewEventScheduleWindow;
 }
 
 CItemExplanationWindow* CSystem::GetUI_NewItemExplanationWindow() const
