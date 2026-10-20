@@ -5,6 +5,7 @@
 #include <vector>
 #include "Core/Platform/WinCompat.h"
 #include "Data/GameConfig/GameConfigValidation.h"
+#include "Camera/FirstPersonSettings.h"
 
 class GameConfig
 {
@@ -104,6 +105,10 @@ public:
     void SetChatCommandTemplates(const std::vector<std::wstring>& templates);
 
     // Camera
+    const FirstPersonSettings& GetFirstPersonSettings() const { return m_firstPersonSettings; }
+    bool IsFirstPersonPreferred() const { return m_firstPersonPreferred; }
+    void SetFirstPersonPreferred(bool enabled) { m_firstPersonPreferred = enabled; }
+
     int GetZoom() const { return m_zoom; }
     void SetZoom(int zoom);
 
@@ -206,6 +211,8 @@ private:
     bool m_enableAnimationTaskPool;
 
     int m_zoom;
+    bool m_firstPersonPreferred = false;
+    FirstPersonSettings m_firstPersonSettings;
     bool m_sortParticleDraws;
     bool m_vsyncEnabled;
     LookPreset m_look;
@@ -223,6 +230,9 @@ private:
     bool m_disableWingShadow;
     bool m_disableBodyShadows;
     int m_fpsCap;
+
+    void LoadCameraPreferences();
+    void SaveCameraPreferences();
 
     int ReadInt(const wchar_t* section, const wchar_t* key, int defaultValue) const;
     void WriteInt(const wchar_t* section, const wchar_t* key, int value);

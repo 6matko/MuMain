@@ -16,6 +16,7 @@
 #include "Render/Terrain/ZzzLodTerrain.h"
 #include "Engine/Object/ZzzInterface.h"
 #include "Input/Selection.h"
+#include "Input/FirstPersonInput.h"
 #include "Render/Effects/ZzzEffect.h"
 #include "World/MapInfra/MapManager.h"
 #include "UI/Core/SceneUICoordinator.h"
@@ -363,6 +364,7 @@ void MoveMainScene()
     if (ErrorMessage != 0)
         MouseOnWindow = true;
 
+    Input::FirstPerson::UpdateOwnership();
     UpdateGameEntities();
 
     g_ConsoleDebug->UpdateMainScene();
@@ -376,6 +378,12 @@ void MoveMainScene()
  * @param outByWaterMap Output water map flag (0=normal, 1=hellas water, 2=water terrain)
  * @param cameraPos Camera position for frustum
  */
+static void UpdateWorldPickingRay()
+{
+    Input::FirstPerson::CenterPicking();
+    CameraProjection::ScreenToWorldRay(g_Camera, MouseX, MouseY, MouseTarget);
+}
+
 static void SetupMainSceneViewport(int& outWidth, int& outHeight, BYTE& outByWaterMap, vec3_t cameraPos)
 {
     outByWaterMap = 0;
@@ -402,7 +410,7 @@ static void SetupMainSceneViewport(int& outWidth, int& outHeight, BYTE& outByWat
         // Don't disable fog - let BeginOpengl() handle it based on FogEnable
     }
     Scenes::Lighting::SubmitSceneLighting();
-    CameraProjection::ScreenToWorldRay(g_Camera, MouseX, MouseY, MouseTarget);
+    UpdateWorldPickingRay();
     App::Control::Frames::RecordWorldCamera();
 }
 

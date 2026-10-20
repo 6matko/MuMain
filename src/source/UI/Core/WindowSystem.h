@@ -106,6 +106,7 @@ namespace mu::ui::window
         void UnloadMainSceneInterface();
 
         bool IsVisible(DWORD dwKey);
+        bool NeedsGameplayPointer();
         void Show(DWORD dwKey);
         void Hide(DWORD dwKey);
         void Toggle(DWORD dwKey);	//. Show <-> Hide

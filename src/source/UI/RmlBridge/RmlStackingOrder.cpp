@@ -42,6 +42,7 @@ constexpr DocumentPlacement Placements[] = {
     {"world_labels.rml", 1.0f, MainScene},
     // The status texts over the world above the HUD, drawn with the name labels.
     {"hud_status.rml", 1.0f, MainScene},
+    {"first_person_crosshair.rml", 1.0f, MainScene},
     // The modern theme's top-right button row: under every window, which dock over it.
     {"main_frame_top.rml", 1.05f, MainScene},
     // The duel and soccer boards drew under every panel.

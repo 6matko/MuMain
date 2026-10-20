@@ -1830,6 +1830,19 @@ CHotKey* CSystem::GetNewUIHotKey() const
     return m_pNewUIHotKey;
 }
 
+bool CSystem::NeedsGameplayPointer()
+{
+    for (DWORD key = INTERFACE_BEGIN + 1; key < INTERFACE_END; ++key)
+    {
+        if (key == INTERFACE_EVENT_SCHEDULE || key == INTERFACE_CHAR_INFO_BALLOON
+            || key == INTERFACE_SERVER_MESSAGE || key == INTERFACE_MINI_MAP)
+            continue;
+        if (!IsImpossibleHideInterface(key) && IsVisible(key))
+            return true;
+    }
+    return false;
+}
+
 bool CSystem::IsImpossibleSendMoveInterface()
 {
     if (IsVisible(INTERFACE_MIXINVENTORY)

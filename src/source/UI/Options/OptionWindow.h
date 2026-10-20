@@ -236,7 +236,7 @@ namespace mu::ui::window
             // field rather than one bool per dropdown gives exclusivity for free -- opening one
             // overwrites whichever other id was here, no separate "close the others" step needed.
             // 0=resolution, 1=fpsCap, 2=theme, 3=language, 4=font, 5=uiScale, 6=antialiasing,
-            // 7=anisotropy (RmlToggleDropdown()/
+            // 7=anisotropy, 8=viewMode (RmlToggleDropdown()/
             // RmlDropdownOptionClick()'s own ids). Replaces RmlUi's native <select>/<option>
             // (WidgetDropDown) entirely -- see option_window.rml's own history for why: that
             // widget's own generated selectbox/selectvalue/selectarrow sub-elements need CSS this
@@ -248,6 +248,10 @@ namespace mu::ui::window
             // mechanism the tab bar above already proves reliable.
             int openDropdown = -1;
 
+            int viewMode = 0;
+            Rml::String viewModeLabel;
+            Rml::String classicViewLabel;
+            Rml::String firstPersonViewLabel;
             bool autoAttack = true;
             Rml::String autoAttackLabel;
             bool whisperSound = false;
@@ -372,6 +376,9 @@ namespace mu::ui::window
             Rml::String uiScaleTooltip;
         };
         void BindRmlModel(Rml::DataModelConstructor& c, OptionRmlModel& model);
+        void BindGameplayModel(Rml::DataModelConstructor& c, OptionRmlModel& model);
+        void SyncViewMode(OptionRmlModel& model);
+        void SyncLocalizedLabel(Rml::String& field, const char* fieldName, const wchar_t* text);
         void SyncImpliedEffectRows(OptionRmlModel& model);
         void SyncTuningModel(OptionRmlModel& model);
         void OnRmlBuilt();

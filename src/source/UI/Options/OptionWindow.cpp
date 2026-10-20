@@ -346,6 +346,20 @@ bool mu::ui::window::COptionWindow::Create(CManager* pNewUIMng)
     return true;
 }
 
+void mu::ui::window::COptionWindow::BindGameplayModel(Rml::DataModelConstructor& c, OptionRmlModel& model)
+{
+    c.Bind("view_mode", &model.viewMode);
+    c.Bind("view_mode_label", &model.viewModeLabel);
+    c.Bind("classic_view_label", &model.classicViewLabel);
+    c.Bind("first_person_view_label", &model.firstPersonViewLabel);
+    c.Bind("auto_attack", &model.autoAttack);
+    c.Bind("auto_attack_label", &model.autoAttackLabel);
+    c.Bind("whisper_sound", &model.whisperSound);
+    c.Bind("whisper_sound_label", &model.whisperSoundLabel);
+    c.Bind("slide_help", &model.slideHelp);
+    c.Bind("slide_help_label", &model.slideHelpLabel);
+}
+
 void mu::ui::window::COptionWindow::BindRmlModel(Rml::DataModelConstructor& c, OptionRmlModel& model)
 {
     c.Bind("positioned", &model.positioned);
@@ -368,12 +382,7 @@ void mu::ui::window::COptionWindow::BindRmlModel(Rml::DataModelConstructor& c, O
 
     c.Bind("open_dropdown", &model.openDropdown);
 
-    c.Bind("auto_attack", &model.autoAttack);
-    c.Bind("auto_attack_label", &model.autoAttackLabel);
-    c.Bind("whisper_sound", &model.whisperSound);
-    c.Bind("whisper_sound_label", &model.whisperSoundLabel);
-    c.Bind("slide_help", &model.slideHelp);
-    c.Bind("slide_help_label", &model.slideHelpLabel);
+    BindGameplayModel(c, model);
     c.Bind("render_all_effects", &model.renderAllEffects);
     c.Bind("render_all_effects_label", &model.renderAllEffectsLabel);
     c.Bind("windowed_mode", &model.windowedMode);
@@ -817,7 +826,7 @@ void mu::ui::window::COptionWindow::SyncImpliedEffectRows(OptionRmlModel& model)
 
 void mu::ui::window::COptionWindow::RmlToggleDropdown(int dropdownId)
 {
-    if (dropdownId < 0 || dropdownId > 7)
+    if (dropdownId < 0 || dropdownId > 8)
         return;
     // Toggle: clicking the currently-open one's own value box closes it; clicking any other
     // (including a different dropdown's) overwrites m_iOpenDropdown, which closes whatever else
@@ -855,6 +864,13 @@ void mu::ui::window::COptionWindow::RmlDropdownOptionClick(int dropdownId, int o
         break;
     case 7:
         RmlAnisotropyChanged(optionIndex);
+        break;
+    case 8:
+        if (optionIndex == 0 || optionIndex == 1)
+        {
+            GameConfig::GetInstance().SetFirstPersonPreferred(optionIndex == 1);
+            GameConfig::GetInstance().Save();
+        }
         break;
     default:
         break;
@@ -1587,6 +1603,25 @@ void mu::ui::window::COptionWindow::ApplyWindowModeToggle()
     GameConfig::GetInstance().Save();
 }
 
+void mu::ui::window::COptionWindow::SyncLocalizedLabel(Rml::String& field, const char* fieldName, const wchar_t* text)
+{
+    const Rml::String narrow = StringUtils::WideToNarrow(text);
+    if (field != narrow)
+    {
+        field = narrow;
+        m_RmlView.MarkDirty(fieldName);
+    }
+}
+
+void mu::ui::window::COptionWindow::SyncViewMode(OptionRmlModel& model)
+{
+    SyncLocalizedLabel(model.viewModeLabel, "view_mode_label", I18N::Game::ViewMode);
+    SyncLocalizedLabel(model.classicViewLabel, "classic_view_label", I18N::Game::ClassicView);
+    SyncLocalizedLabel(model.firstPersonViewLabel, "first_person_view_label", I18N::Game::FirstPersonView);
+    const int viewMode = GameConfig::GetInstance().IsFirstPersonPreferred() ? 1 : 0;
+    if (model.viewMode != viewMode) { model.viewMode = viewMode; m_RmlView.MarkDirty("view_mode"); }
+}
+
 void mu::ui::window::COptionWindow::SyncRmlModel()
 {
     if (!m_RmlView.Document())
@@ -1609,12 +1644,7 @@ void mu::ui::window::COptionWindow::SyncRmlModel()
     // very window relabels it immediately rather than only on next reopen.
     const auto syncLabel = [this](Rml::String& field, const char* fieldName, const wchar_t* text)
     {
-        const Rml::String narrow = StringUtils::WideToNarrow(text);
-        if (field != narrow)
-        {
-            field = narrow;
-            m_RmlView.MarkDirty(fieldName);
-        }
+        SyncLocalizedLabel(field, fieldName, text);
     };
     // .option-dropdown's own closed-state box shows this instead of a {{}} array-index expression
     // -- see model.resolutionValueLabel's own comment (OptionWindow.h) for why.
@@ -1639,6 +1669,7 @@ void mu::ui::window::COptionWindow::SyncRmlModel()
     syncLabel(model.sectionQualityLabel, "section_quality_label", I18N::Game::Quality);
     syncLabel(model.sectionEffectsLabel, "section_effects_label", I18N::Game::Effects);
     syncLabel(model.sectionShadowsLabel, "section_shadows_label", I18N::Game::Shadows);
+    SyncViewMode(model);
     syncLabel(model.autoAttackLabel, "auto_attack_label", I18N::Game::AutomaticAttack);
     syncLabel(model.whisperSoundLabel, "whisper_sound_label", I18N::Game::BeepSoundForWhispering);
     syncLabel(model.slideHelpLabel, "slide_help_label", I18N::Game::SlideHelp);
