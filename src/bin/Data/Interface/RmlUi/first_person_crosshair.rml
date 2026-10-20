@@ -1,0 +1,13 @@
+<rml>
+<head>
+    <title>First-person crosshair</title>
+    <link type="text/rcss" href="base.rcss"/>
+    <link type="text/rcss" href="first_person_crosshair.rcss"/>
+</head>
+<body data-model="first_person_crosshair">
+    <!-- bound-geometry: aim point follows the live world viewport's projected centre -->
+    <div class="aim" data-style-left="aim_x + 'dp'" data-style-top="aim_y + 'dp'">
+        <div class="aim-horizontal"></div><div class="aim-vertical"></div>
+    </div>
+</body>
+</rml>

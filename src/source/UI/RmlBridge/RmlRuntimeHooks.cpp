@@ -19,6 +19,8 @@
 #include "UI/Scaling/UITransform.h"
 #include "UI/Core/WindowSystem.h"
 #include "UI/HUD/ChatLogWindow.h"
+#include "UI/HUD/FirstPersonCrosshair.h"
+#include "Input/FirstPersonInput.h"
 
 namespace UI::RmlBridge
 {
@@ -42,6 +44,8 @@ void InstallRuntimeHooks()
     };
     hooks.beforeDestroy = []
     {
+        Input::FirstPerson::ReleasePointer();
+        UI::HUD::ReleaseFirstPersonCrosshair();
         UI::Diagnostics::Release();
         ClearThemeFontCache();
     };
@@ -50,6 +54,7 @@ void InstallRuntimeHooks()
         SuspendMainSceneDocumentsOutsideMainScene();
         ApplySceneStackingDepths();
         Tooltip::ExpireUnrefreshed();
+        UI::HUD::SyncFirstPersonCrosshair();
         if (Rml::Context* context = RmlUiRuntime::Instance().GetContext())
             DocumentHints::Update(*context);
     };

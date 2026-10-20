@@ -9,6 +9,8 @@
 #include "UI/Widgets/TextSearch.h"
 #include "Render/Renderer/MuRenderer.h"
 #include "Core/Input/UiInputRouter.h"
+#include "Input/FirstPersonInput.h"
+#include "Input/FirstPersonMovement.h"
 #include "Render/Textures/ZzzOpenglUtil.h"
 #include "Render/Models/ZzzBMD.h"
 #include "Render/Terrain/ZzzLodTerrain.h"
@@ -2626,6 +2628,19 @@ bool SkillKeyPush(int Skill)
     return false;
 }
 
+static void ProgressAttackTeleportFade(OBJECT* o)
+{
+    if (o->Teleport == TELEPORT_BEGIN)
+    {
+        o->Alpha -= 0.1f * FPS_ANIMATION_FACTOR;
+        if (o->Alpha < 0.1f)
+        {
+            o->Teleport = TELEPORT;
+        }
+    }
+
+}
+
 void Attack(CHARACTER* c)
 {
     const bool mouseOnHud = g_pMainFrame != nullptr && g_pMainFrame->IsMouseOverHud();
@@ -2648,14 +2663,9 @@ void Attack(CHARACTER* c)
 
     OBJECT* o = &c->Object;
 
-    if (o->Teleport == TELEPORT_BEGIN)
-    {
-        o->Alpha -= 0.1f * FPS_ANIMATION_FACTOR;
-        if (o->Alpha < 0.1f)
-        {
-            o->Teleport = TELEPORT;
-        }
-    }
+    ProgressAttackTeleportFade(o);
+    if (Input::FirstPerson::BlocksWorldActions())
+        return;
 
     bool Success = false;
 
@@ -2916,6 +2926,40 @@ void FillAddFriendName()
 }
 }
 
+static bool CanStartHeroMovement(const OBJECT* o)
+{
+    return ((o->CurrentAction != PLAYER_SHOCK && (o->Teleport != TELEPORT_BEGIN && o->Teleport != TELEPORT && o->Alpha >= 0.7f) &&
+                !Engine::Object::IsAttackAction(o->CurrentAction)
+                && (o->CurrentAction<PLAYER_SKILL_SLEEP || o->CurrentAction>PLAYER_SKILL_LIGHTNING_SHOCK)
+                && o->CurrentAction != PLAYER_RECOVER_SKILL
+                && (o->CurrentAction<PLAYER_SKILL_THRUST || o->CurrentAction>PLAYER_SKILL_HP_UP_OURFORCES))
+                || (o->CurrentAction >= PLAYER_STOP_TWO_HAND_SWORD_TWO && o->CurrentAction <= PLAYER_RUN_TWO_HAND_SWORD_TWO)
+                || (o->CurrentAction >= PLAYER_DARKLORD_STAND && o->CurrentAction <= PLAYER_RUN_RIDE_HORSE)
+                || (o->CurrentAction >= PLAYER_FENRIR_RUN && o->CurrentAction <= PLAYER_FENRIR_WALK_ONE_LEFT)
+                || (o->CurrentAction >= PLAYER_RAGE_FENRIR_WALK && o->CurrentAction <= PLAYER_RAGE_FENRIR_STAND_ONE_LEFT)
+                );
+}
+
+static void UpdateHeroTileInput(OBJECT* o)
+{
+    Input::FirstPerson::UpdateTileMovement(CanStartHeroMovement(o)
+        && !g_isCharacterBuff(o, eDeBuff_Harden)
+        && !g_isCharacterBuff(o, eDeBuff_CursedTempleRestraint));
+}
+
+static void FinishHeroPathAction(CHARACTER* c, OBJECT* o)
+{
+    if (Input::FirstPerson::BlocksWorldActions())
+        return;
+    if (c->MovementType == MOVEMENT_OPERATE)
+        Action(c, o, false);
+    else
+        if (!CheckArrow() && gCharacterManager.GetBaseClass(Hero->Class) == CLASS_ELF)
+            SetPlayerStop(Hero);
+        else
+            Action(c, o, false);
+}
+
 void MoveHero()
 {
     CHARACTER* c = Hero;
@@ -3047,13 +3091,7 @@ void MoveHero()
                 HeroAngle = (int)c->Object.Angle[2];
                 StandTime = 0;
 
-                if (c->MovementType == MOVEMENT_OPERATE)
-                    Action(c, o, false);
-                else
-                    if (!CheckArrow() && gCharacterManager.GetBaseClass(Hero->Class) == CLASS_ELF)
-                        SetPlayerStop(Hero);
-                    else
-                        Action(c, o, false);
+                FinishHeroPathAction(c, o);
             }
             else
             {
@@ -3066,7 +3104,7 @@ void MoveHero()
     {
         StandTime++;
 
-        if (StandTime >= 40 && !MouseOnWindow && Hero->Dead == 0 &&
+        if (!Input::FirstPerson::IsCaptured() && StandTime >= 40 && !MouseOnWindow && Hero->Dead == 0 &&
             o->CurrentAction != PLAYER_POSE1 && o->CurrentAction != PLAYER_POSE_FEMALE1 &&
             o->CurrentAction != PLAYER_SIT1 && o->CurrentAction != PLAYER_SIT_FEMALE1 && NoAutoAttacking &&
             o->CurrentAction != PLAYER_ATTACK_TELEPORT &&
@@ -3098,6 +3136,7 @@ void MoveHero()
     }
 
     CheckGate();
+    UpdateHeroTileInput(o);
 
     // Core::Input::IsMouseOverUI() added as a 4th gate here too -- same rationale as the duplicate
     // check in Attack() above and Input/Selection.cpp's SelectObjects(): MouseOnWindow/
@@ -3106,7 +3145,8 @@ void MoveHero()
     // click landing on one -- COptionWindow being the concrete case that surfaced this -- fell
     // through and moved the character instead of being consumed by the window. IsMouseOverUI()
     // queries RmlUi's own hover chain directly, sidestepping that per-window bookkeeping.
-    if (!MouseOnWindow && false == g_pNewUISystem->CheckMouseUse() && !Core::Input::IsMouseOverUI())
+    if (!Input::FirstPerson::BlocksWorldActions() && !MouseOnWindow
+        && !g_pNewUISystem->CheckMouseUse() && !Core::Input::IsMouseOverUI())
     {
         bool Success = false;
         if (MouseUpdateTime >= MouseUpdateTimeMax && !s_bIgnoreHeldClickAfterNpcTalk)
@@ -3171,16 +3211,7 @@ void MoveHero()
             }
         }
         else if (Success &&
-            ((o->CurrentAction != PLAYER_SHOCK && (o->Teleport != TELEPORT_BEGIN && o->Teleport != TELEPORT && o->Alpha >= 0.7f) &&
-                !Engine::Object::IsAttackAction(o->CurrentAction)
-                && (o->CurrentAction<PLAYER_SKILL_SLEEP || o->CurrentAction>PLAYER_SKILL_LIGHTNING_SHOCK)
-                && o->CurrentAction != PLAYER_RECOVER_SKILL
-                && (o->CurrentAction<PLAYER_SKILL_THRUST || o->CurrentAction>PLAYER_SKILL_HP_UP_OURFORCES))
-                || (o->CurrentAction >= PLAYER_STOP_TWO_HAND_SWORD_TWO && o->CurrentAction <= PLAYER_RUN_TWO_HAND_SWORD_TWO)
-                || (o->CurrentAction >= PLAYER_DARKLORD_STAND && o->CurrentAction <= PLAYER_RUN_RIDE_HORSE)
-                || (o->CurrentAction >= PLAYER_FENRIR_RUN && o->CurrentAction <= PLAYER_FENRIR_WALK_ONE_LEFT)
-                || (o->CurrentAction >= PLAYER_RAGE_FENRIR_WALK && o->CurrentAction <= PLAYER_RAGE_FENRIR_STAND_ONE_LEFT)
-                ))
+            CanStartHeroMovement(o))
         {
             int RightType = CharacterMachine->Equipment[EQUIPMENT_WEAPON_RIGHT].Type;
             int LeftType = CharacterMachine->Equipment[EQUIPMENT_WEAPON_LEFT].Type;
@@ -3349,7 +3380,7 @@ void MoveHero()
                     c->MovementType = MOVEMENT_MOVE;
                 }
             }
-            else if (!Core::Input::IsKeyDown(VK_SHIFT))
+            else if (!Input::FirstPerson::IsCaptured() && !Core::Input::IsKeyDown(VK_SHIFT))
             {
                 RenderTerrain(true);
 
@@ -3913,9 +3944,14 @@ bool MacroCooldownFraction(float& fraction)
 
 extern int g_iKeyPadEnable;
 
+static bool ShouldRenderGameCursor()
+{
+    return g_bRenderGameCursor && !Input::FirstPerson::IsCaptured();
+}
+
 void RenderCursor()
 {
-    if (!g_bRenderGameCursor)
+    if (!ShouldRenderGameCursor())
         return;
 
     // The sprites below are placed in units around the pointer; drawn at one scale, not stretched to the window.

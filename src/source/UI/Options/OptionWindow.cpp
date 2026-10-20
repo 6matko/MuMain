@@ -376,6 +376,10 @@ void mu::ui::window::COptionWindow::BindRmlModel(Rml::DataModelConstructor& c, O
 
     c.Bind("open_dropdown", &model.openDropdown);
 
+    c.Bind("view_mode", &model.viewMode);
+    c.Bind("view_mode_label", &model.viewModeLabel);
+    c.Bind("classic_view_label", &model.classicViewLabel);
+    c.Bind("first_person_view_label", &model.firstPersonViewLabel);
     c.Bind("auto_attack", &model.autoAttack);
     c.Bind("auto_attack_label", &model.autoAttackLabel);
     c.Bind("whisper_sound", &model.whisperSound);
@@ -875,6 +879,13 @@ void mu::ui::window::COptionWindow::RmlDropdownOptionClick(int dropdownId, int o
         break;
     case DropdownAnisotropy:
         RmlAnisotropyChanged(optionIndex);
+        break;
+    case DropdownViewMode:
+        if (optionIndex == 0 || optionIndex == 1)
+        {
+            GameConfig::GetInstance().SetFirstPersonPreferred(optionIndex == 1);
+            GameConfig::GetInstance().Save();
+        }
         break;
     case DropdownTexturePack:
         RmlTexturePackChanged(optionIndex);
@@ -1677,6 +1688,19 @@ void mu::ui::window::COptionWindow::SyncLabel(Rml::String& field, const char* fi
     }
 }
 
+void mu::ui::window::COptionWindow::SyncViewMode(OptionRmlModel& model)
+{
+    SyncLabel(model.viewModeLabel, "view_mode_label", I18N::Game::ViewMode);
+    SyncLabel(model.classicViewLabel, "classic_view_label", I18N::Game::ClassicView);
+    SyncLabel(model.firstPersonViewLabel, "first_person_view_label", I18N::Game::FirstPersonView);
+    const int viewMode = GameConfig::GetInstance().IsFirstPersonPreferred() ? 1 : 0;
+    if (model.viewMode != viewMode)
+    {
+        model.viewMode = viewMode;
+        m_RmlView.MarkDirty("view_mode");
+    }
+}
+
 void mu::ui::window::COptionWindow::SyncRmlModel()
 {
     if (!m_RmlView.Document())
@@ -1720,6 +1744,7 @@ void mu::ui::window::COptionWindow::SyncRmlModel()
     SyncLabel(model.sectionQualityLabel, "section_quality_label", I18N::Game::Quality);
     SyncLabel(model.sectionEffectsLabel, "section_effects_label", I18N::Game::Effects);
     SyncLabel(model.sectionShadowsLabel, "section_shadows_label", I18N::Game::Shadows);
+    SyncViewMode(model);
     SyncLabel(model.autoAttackLabel, "auto_attack_label", I18N::Game::AutomaticAttack);
     SyncLabel(model.whisperSoundLabel, "whisper_sound_label", I18N::Game::BeepSoundForWhispering);
     SyncLabel(model.slideHelpLabel, "slide_help_label", I18N::Game::SlideHelp);

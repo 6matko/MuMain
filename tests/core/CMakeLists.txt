@@ -164,3 +164,19 @@ mu_add_test(
     SOURCES
         test_zen_amount.cpp
 )
+
+mu_add_test(
+    NAME test_first_person_direction
+    SOURCES
+        test_first_person_direction.cpp
+        ${CMAKE_SOURCE_DIR}/src/source/Input/FirstPersonDirection.cpp
+)
+
+mu_add_test(
+    NAME test_first_person_input
+    SOURCES
+        test_first_person_input.cpp
+        test_first_person_camera.cpp
+        ${CMAKE_SOURCE_DIR}/src/source/App/Platform/Windows/Winmain.cpp
+    LINK_LIBS MuClient
+)

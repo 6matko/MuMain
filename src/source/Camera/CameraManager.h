@@ -2,6 +2,7 @@
 
 #include "ICamera.h"
 #include "CameraMode.h"
+#include "FirstPersonCamera.h"
 #include <memory>
 
 /**
@@ -53,7 +54,8 @@ public:
     /**
      * @brief Gets active camera instance
      */
-    ICamera* GetActiveCamera() const { return m_pActiveCamera; }
+    ICamera* GetActiveCamera() const;
+    FirstPersonCamera& FirstPerson() { return m_FirstPerson; }
 
     /**
      * @brief Whether camera zoom (and orbital rotation) is locked.
@@ -73,6 +75,11 @@ public:
      */
     void ResetActiveView()
     {
+        if (m_FirstPerson.IsEngaged())
+        {
+            m_FirstPerson.ResetView();
+            return;
+        }
         if (m_pActiveCamera)
             m_pActiveCamera->ResetView();
     }
@@ -85,6 +92,7 @@ private:
     CameraManager(const CameraManager&) = delete;
     CameraManager& operator=(const CameraManager&) = delete;
 
+    FirstPersonCamera m_FirstPerson;
     CameraMode m_CurrentMode;
     ICamera* m_pActiveCamera;
     bool m_ZoomLocked = true;  // F10 toggles; default = locked

@@ -53,6 +53,36 @@ GameConfig::GameConfig()
     Load();
 }
 
+void GameConfig::LoadCameraPreferences()
+{
+    using namespace CfgSections;
+    using namespace CfgKeys;
+    using namespace CfgDefaults;
+    m_firstPersonPreferred = ReadInt(CfgSectionCamera, CfgKeyViewMode, 0) == 1;
+    m_zoom = ReadInt(CfgSectionCamera, CfgKeyZoom, CfgDefaultZoom);
+    const FirstPersonSettings defaults;
+    constexpr int MinFov = 45, MaxFov = 120;
+    constexpr int MinEyeHeight = 40, MaxEyeHeight = 300;
+    constexpr int MinHeadOffset = -30, MaxHeadOffset = 60;
+    constexpr int MinSensitivity = 1, MaxSensitivity = 1000;
+    constexpr int MinPitchLimit = 10, MaxPitchLimit = 85;
+    constexpr int MinTransitionMs = 100, MaxTransitionMs = 3000;
+    constexpr float MilliUnits = 1000.0f;
+    m_firstPersonSettings.fieldOfView = std::clamp(ReadInt(CfgSectionCamera, CfgKeyFirstPersonFov,
+        static_cast<int>(defaults.fieldOfView)), MinFov, MaxFov);
+    m_firstPersonSettings.eyeHeight = std::clamp(ReadInt(CfgSectionCamera, CfgKeyFirstPersonEyeHeight,
+        static_cast<int>(defaults.eyeHeight)), MinEyeHeight, MaxEyeHeight);
+    m_firstPersonSettings.headOffset = std::clamp(ReadInt(CfgSectionCamera, CfgKeyFirstPersonHeadOffset,
+        static_cast<int>(defaults.headOffset)), MinHeadOffset, MaxHeadOffset);
+    m_firstPersonSettings.sensitivity = std::clamp(ReadInt(CfgSectionCamera, CfgKeyFirstPersonSensitivity,
+        static_cast<int>(defaults.sensitivity * MilliUnits)), MinSensitivity, MaxSensitivity) / MilliUnits;
+    m_firstPersonSettings.pitchLimit = std::clamp(ReadInt(CfgSectionCamera, CfgKeyFirstPersonPitchLimit,
+        static_cast<int>(defaults.pitchLimit)), MinPitchLimit, MaxPitchLimit);
+    m_firstPersonSettings.transitionSeconds = std::clamp(ReadInt(CfgSectionCamera, CfgKeyFirstPersonTransition,
+        static_cast<int>(defaults.transitionSeconds * MilliUnits)), MinTransitionMs, MaxTransitionMs) / MilliUnits;
+
+}
+
 void GameConfig::Load()
 {
     using namespace CfgSections;
@@ -89,7 +119,7 @@ void GameConfig::Load()
     m_enableAnimationTaskPool =
         ReadBool(CfgSectionUI, CfgKeyEnableAnimationTaskPool, CfgDefaultEnableAnimationTaskPool);
 
-    m_zoom = ReadInt(CfgSectionCamera, CfgKeyZoom, CfgDefaultZoom);
+    LoadCameraPreferences();
     m_sortParticleDraws = ReadBool(CfgSectionRender, CfgKeySortParticleDraws, CfgDefaultSortParticleDraws);
     m_vsyncEnabled = ReadBool(CfgSectionRender, CfgKeyVSync, CfgDefaultVSync);
     m_look = ReadLookPreset(m_configPath);
@@ -129,6 +159,14 @@ void GameConfig::Load()
     RemoveObsoleteSection(L"PARTITION");                      // launcher metadata, never read by client
 }
 
+void GameConfig::SaveCameraPreferences()
+{
+    using namespace CfgSections;
+    using namespace CfgKeys;
+    WriteInt(CfgSectionCamera, CfgKeyViewMode, m_firstPersonPreferred ? 1 : 0);
+    WriteInt(CfgSectionCamera, CfgKeyZoom, m_zoom);
+}
+
 void GameConfig::Save()
 {
     using namespace CfgSections;
@@ -159,7 +197,7 @@ void GameConfig::Save()
     WriteString(CfgSectionUI, CfgKeyRmlTheme, m_rmlTheme);
     WriteInt(CfgSectionUI, CfgKeyUIScalePercent, m_uiScalePercent);
 
-    WriteInt(CfgSectionCamera, CfgKeyZoom, m_zoom);
+    SaveCameraPreferences();
     WriteBool(CfgSectionRender, CfgKeyVSync, m_vsyncEnabled);
     WriteString(CfgSectionRender, CfgKeyLook, GameConfigValidation::FormatLook(m_look));
     WriteInt(CfgSectionRender, CfgKeyAnisotropy, m_anisotropy);

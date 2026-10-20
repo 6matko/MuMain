@@ -412,6 +412,16 @@
 	</div>
 
 	<div class="option-tab-panel" data-class-hidden="active_tab != 3">
+        <div class="option-row option-select-row">
+            <span class="option-row-label">{{view_mode_label}}</span>
+            <div class="option-dropdown">
+                <div class="option-dropdown-value" data-event-click="option_toggle_dropdown(8)">{{view_mode == 0 ? classic_view_label : first_person_view_label}}</div>
+                <div class="option-dropdown-list" data-class-hidden="open_dropdown != 8">
+                    <div class="option-dropdown-option" data-class-selected="view_mode == 0" data-event-click="option_dropdown_option_click(8, 0)">{{classic_view_label}}</div>
+                    <div class="option-dropdown-option" data-class-selected="view_mode == 1" data-event-click="option_dropdown_option_click(8, 1)">{{first_person_view_label}}</div>
+                </div>
+            </div>
+        </div>
 		<div class="option-row option-checkbox-row" data-event-click="option_toggle_auto_attack">
 			<span class="option-row-label">{{auto_attack_label}}</span>
 			<div class="checkbox-box" data-class-checked="auto_attack">
@@ -470,11 +480,11 @@
 		<div class="option-row option-select-row option-row-tipped" data-attr-data-hint="texture_pack_tooltip">
 			<span class="option-row-label">{{texture_pack_row_label}}</span>
 			<div class="option-dropdown">
-				<div class="option-dropdown-value" data-event-click="option_toggle_dropdown(8)">{{texture_pack_value_label}}</div>
-				<div class="option-dropdown-list" data-class-hidden="open_dropdown != 8">
+				<div class="option-dropdown-value" data-event-click="option_toggle_dropdown(9)">{{texture_pack_value_label}}</div>
+				<div class="option-dropdown-list" data-class-hidden="open_dropdown != 9">
 					<div class="option-dropdown-option" data-for="label : texture_pack_labels"
 					     data-class-selected="it_index == texture_pack_index"
-					     data-event-click="option_dropdown_option_click(8, it_index)">{{label}}</div>
+					     data-event-click="option_dropdown_option_click(9, it_index)">{{label}}</div>
 				</div>
 			</div>
 		</div>

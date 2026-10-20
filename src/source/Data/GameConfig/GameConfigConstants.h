@@ -52,6 +52,13 @@ namespace CfgKeys
 
     // Camera
     inline constexpr wchar_t CfgKeyZoom[] = L"Zoom";
+    inline constexpr wchar_t CfgKeyViewMode[] = L"ViewMode";
+    inline constexpr wchar_t CfgKeyFirstPersonFov[] = L"FirstPersonFov";
+    inline constexpr wchar_t CfgKeyFirstPersonEyeHeight[] = L"FirstPersonEyeHeight";
+    inline constexpr wchar_t CfgKeyFirstPersonHeadOffset[] = L"FirstPersonHeadOffset";
+    inline constexpr wchar_t CfgKeyFirstPersonSensitivity[] = L"FirstPersonSensitivityMilliDegrees";
+    inline constexpr wchar_t CfgKeyFirstPersonPitchLimit[] = L"FirstPersonPitchLimit";
+    inline constexpr wchar_t CfgKeyFirstPersonTransition[] = L"FirstPersonTransitionMs";
 
     // Render
     inline constexpr wchar_t CfgKeySortParticleDraws[] = L"SortParticleDraws";

@@ -9555,6 +9555,9 @@
   <data name="Other items" xml:space="preserve">
     <value>Other items</value>
   </data>
+  <data name="ViewMode" xml:space="preserve"><value>View Mode</value></data>
+  <data name="ClassicView" xml:space="preserve"><value>Classic View</value></data>
+  <data name="FirstPersonView" xml:space="preserve"><value>First-Person View</value></data>
   <data name="MagicStoneOfOwner" xml:space="preserve">
     <value>Magic stone of %ls</value>
   </data>

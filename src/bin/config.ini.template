@@ -21,6 +21,7 @@ Font=
 RmlTheme=legacy
 UIScalePercent=100
 [Camera]
+ViewMode=0
 Zoom=1735
 [Render]
 VSync=1

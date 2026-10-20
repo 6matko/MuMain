@@ -38,6 +38,7 @@
 #include "Render/Look/LookProfileSetting.h"
 #include "Render/Look/TuningSetting.h"
 #include "Render/RmlUi/RmlUiRuntime.h"
+#include "Input/FirstPersonInput.h"
 #include "UI/RmlBridge/RmlRuntimeHooks.h"
 #include "Engine/Object/ZzzOpenData.h"
 #include "Scenes/SceneCore.h"
@@ -219,6 +220,7 @@ static void ShutdownRendererWindow()
     if (g_sdlWindow)
     {
         Core::Platform::SetGameWindow(nullptr);
+        Input::FirstPerson::SetGameWindow(nullptr);
         SDL_DestroyWindow(g_sdlWindow);
         g_sdlWindow = nullptr;
         g_hWnd = nullptr;
@@ -1410,6 +1412,17 @@ SDL_WindowID ActionWindowId(const SDL_Event& event)
 
 // Physical and scripted input share UI-first routing. Scripted input owns its
 // own legacy held state; it never acquires the OS pointer or replays SDL events.
+static void RoutePointerButton(SDL_Event& event, bool synthetic, bool& propagates)
+{
+    if (!synthetic)
+        Input::FirstPerson::PrepareButtonEvent(event);
+    if (!synthetic && event.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
+        Core::Input::Synthetic::CancelForPhysicalButton(event.button.button);
+    propagates = Core::Input::RouteToUi(event, g_sdlWindow);
+    if (propagates && !synthetic)
+        HandleMouseButton(event);
+}
+
 bool RouteActionInput(SDL_Event& event, bool synthetic, bool& propagates)
 {
     if (!g_sdlWindow || (synthetic && ActionWindowId(event) != SDL_GetWindowID(g_sdlWindow)))
@@ -1418,6 +1431,8 @@ bool RouteActionInput(SDL_Event& event, bool synthetic, bool& propagates)
     switch (event.type)
     {
     case SDL_EVENT_MOUSE_MOTION:
+        if (!synthetic && Input::FirstPerson::HandleMotion(event))
+            return true;
         // Motion always reaches physical legacy tracking even when UI hovered.
         propagates = Core::Input::RouteToUi(event, g_sdlWindow);
         if (!synthetic)
@@ -1425,11 +1440,7 @@ bool RouteActionInput(SDL_Event& event, bool synthetic, bool& propagates)
         return true;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
     case SDL_EVENT_MOUSE_BUTTON_UP:
-        if (!synthetic && event.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
-            Core::Input::Synthetic::CancelForPhysicalButton(event.button.button);
-        propagates = Core::Input::RouteToUi(event, g_sdlWindow);
-        if (propagates && !synthetic)
-            HandleMouseButton(event);
+        RoutePointerButton(event, synthetic, propagates);
         return true;
     case SDL_EVENT_TEXT_INPUT:
         propagates = Core::Input::RouteToUi(event, g_sdlWindow);
@@ -1526,6 +1537,8 @@ MSG MainLoop()
                 break;
             }
             case SDL_EVENT_MOUSE_WHEEL:
+                if (Input::FirstPerson::HandleWheel(event))
+                    break;
                 if (Core::Input::RouteToUi(event, g_sdlWindow))
                 {
                     // SDL does not pre-correct flipped (natural) scrolling; invert.
@@ -1551,6 +1564,7 @@ MSG MainLoop()
                 break;
 #endif
             case SDL_EVENT_WINDOW_FOCUS_LOST:
+                Input::FirstPerson::ReleasePointer();
                 HandleFocusChange(false);
                 break;
             case SDL_EVENT_TEXT_INPUT:
@@ -1860,9 +1874,11 @@ DWORD GetDesktopBitsPerPel()
 
 void UpdateCursorClip()
 {
-    // Confine cursor in fullscreen + active only. In windowed mode the user
-    // must be able to move the cursor to other windows; when deactivated we
-    // must also release so Windows can focus other apps.
+    // SDL owns confinement during first-person look, including windowed mode.
+    // Do not undo its native clip on focus/size messages.
+    if (Input::FirstPerson::IsCaptured() && g_bWndActive)
+        return;
+    // Otherwise only fullscreen keeps the pointer inside while active.
     if (!g_hWnd || g_bUseWindowMode || !g_bWndActive)
     {
         ClipCursor(nullptr);
@@ -1982,6 +1998,24 @@ static void InitializeWorkingDirectoryAndLog()
 {
     SetWorkingDirectoryToBasePath();
     mu::log::Init();
+}
+
+static bool CreateGameWindow()
+{
+    const SDL_WindowFlags windowFlags = Core::Platform::BuildSDLWindowFlags(g_bUseWindowMode != TRUE, false);
+
+    g_sdlWindow =
+        SDL_CreateWindow("MU Online - Raccoon", static_cast<int>(WindowWidth), static_cast<int>(WindowHeight), windowFlags);
+    Input::FirstPerson::SetGameWindow(g_sdlWindow);
+    if (!g_sdlWindow)
+    {
+        g_ErrorReport.Write(L"> SDL_CreateWindow failed.\r\n");
+        MessageBox(nullptr, L"Windows aplication error!", L"Aplication Error", MB_ICONERROR);
+        return false;
+    }
+    Core::Platform::SetGameWindow(g_sdlWindow);
+
+    return true;
 }
 
 #ifdef _WIN32
@@ -2144,17 +2178,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
     SetWorkingDirectoryToBasePath();
 #endif
 
-    const SDL_WindowFlags windowFlags = Core::Platform::BuildSDLWindowFlags(g_bUseWindowMode != TRUE, false);
-
-    g_sdlWindow =
-        SDL_CreateWindow("MU Online - Raccoon", static_cast<int>(WindowWidth), static_cast<int>(WindowHeight), windowFlags);
-    if (!g_sdlWindow)
-    {
-        g_ErrorReport.Write(L"> SDL_CreateWindow failed.\r\n");
-        MessageBox(nullptr, L"Windows aplication error!", L"Aplication Error", MB_ICONERROR);
+    if (!CreateGameWindow())
         return 0;
-    }
-    Core::Platform::SetGameWindow(g_sdlWindow);
 
     RefreshWindowContentScale();
 

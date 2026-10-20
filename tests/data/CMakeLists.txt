@@ -148,6 +148,7 @@ mu_add_test(
     NAME test_character_bones
     SOURCES
         test_character_bones.cpp
+        test_first_person_animation.cpp
         ${CMAKE_SOURCE_DIR}/src/source/App/Platform/Windows/Winmain.cpp
     LINK_LIBS
         MuClient

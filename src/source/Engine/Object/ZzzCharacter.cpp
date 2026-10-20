@@ -23,6 +23,7 @@
 #include "Engine/Object/ZzzInfomation.h"
 #include "Engine/Object/ZzzObject.h"
 #include "Engine/Object/ZzzCharacter.h"
+#include "Camera/CameraManager.h"
 #include "Engine/Object/AnimationTaskPool.h"
 #include "Engine/Object/PlayerActionState.h"
 #include "Render/Terrain/ZzzLodTerrain.h"
@@ -8410,6 +8411,27 @@ void RenderEye(OBJECT* o, int Left, int Right, float fSize = 1.0f)
     VectorCopy(Position, o->EyeLeft);
 }
 
+static void RenderCharacterWeaponShadows(CHARACTER* c, bool Translate)
+{
+    for (int i = 0; i < 2; i++)
+    {
+        if (c->Weapon[i].Type >= MODEL_SHORT_BOW && c->Weapon[i].Type <= MODEL_BOW + 32)
+        {
+            continue;
+        }
+
+        PART_t* p = &c->Weapon[i];
+
+        if (p->Type != -1 && c->SafeZone == false)
+        {
+            int Type = p->Type;
+            PART_t ShadowPart = *p;
+
+            RenderLinkObject(0.f, 0.f, 0.f, c, &ShadowPart, Type, 0, 0, false, Translate);
+        }
+    }
+}
+
 void RenderCharacter(CHARACTER* c, OBJECT* o, int Select)
 {
     if (g_isCharacterBuff(o, eBuff_CrywolfNPCHide))
@@ -8549,26 +8571,13 @@ void RenderCharacter(CHARACTER* c, OBJECT* o, int Select)
                 }
             }
 
-            for (int i = 0; i < 2; i++)
-            {
-                if (c->Weapon[i].Type >= MODEL_SHORT_BOW && c->Weapon[i].Type <= MODEL_BOW + 32)
-                {
-                    continue;
-                }
-
-                PART_t* p = &c->Weapon[i];
-
-                if (p->Type != -1 && c->SafeZone == false)
-                {
-                    int Type = p->Type;
-                    PART_t ShadowPart = *p;
-
-                    RenderLinkObject(0.f, 0.f, 0.f, c, &ShadowPart, Type, 0, 0, false, Translate);
-                }
-            }
+            RenderCharacterWeaponShadows(c, Translate);
             o->EnableShadow = false;
         }
     }
+
+    if (c == Hero && CameraManager::Instance().FirstPerson().ShouldHideLocalBody())
+        return;
 
     if (byRender == CHARACTER_RENDER_OBJ)
     {

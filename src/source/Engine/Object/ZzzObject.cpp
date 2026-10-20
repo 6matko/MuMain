@@ -5824,7 +5824,7 @@ static void HandleItemOnGround(OBJECT* o)
     // Rotate items with camera when in orbital mode (after default angle is set)
     if (CameraManager::Instance().GetCurrentMode() == CameraMode::Orbital)
     {
-        OrbitalCamera* orbitalCam = static_cast<OrbitalCamera*>(CameraManager::Instance().GetActiveCamera());
+        OrbitalCamera* orbitalCam = dynamic_cast<OrbitalCamera*>(CameraManager::Instance().GetActiveCamera());
         if (orbitalCam)
         {
             float cameraYaw = orbitalCam->GetTotalYaw();

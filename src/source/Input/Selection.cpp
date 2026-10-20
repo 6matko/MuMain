@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Input/FirstPersonInput.h"
 #include "Core/Input/KeyState.h"
 #include "Input/Selection.h"
 #include "Character/CharacterManager.h" // gCharacterManager
@@ -91,6 +92,15 @@ int SelectItem()
     return -1;
 }
 
+static bool CanPickCharacter(CHARACTER* character)
+{
+    if (character == Hero && Input::FirstPerson::IsCaptured())
+        return false;
+    OBJECT* object = &character->Object;
+    return object->Live && object->Visible && object->Alpha > 0.0f && character->Dead == 0
+        && !g_isCharacterBuff(object, eBuff_CrywolfNPCHide);
+}
+
 int SelectCharacter(BYTE Kind)
 {
     bool Main = true;
@@ -127,7 +137,7 @@ int SelectCharacter(BYTE Kind)
         CHARACTER* c = &CharactersClient[i];
         OBJECT* o = &c->Object;
 
-        if (o->Live && o->Visible && o->Alpha > 0.f && c->Dead == 0 && !g_isCharacterBuff(o, eBuff_CrywolfNPCHide))
+        if (CanPickCharacter(c))
         {
             if (o->Kind == KIND_PLAYER)		//. bug fixed by soyaviper
             {
@@ -268,21 +278,10 @@ int SelectOperate()
     return -1;
 }
 
-void SelectObjects()
+static void UpdateSelectedCharacter()
 {
-    BYTE CKind_1, CKind_2;
-
-    if (SceneFlag == CHARACTER_SCENE)
-    {
-        SelectedCharacter = SelectCharacter(KIND_PLAYER);
-        SelectedItem = -1;
-        SelectedNpc = -1;
-        SelectedOperate = -1;
-        Attacking = -1;
-        return;
-    }
-
-    if (g_pOption->IsAutoAttack() && gMapManager.WorldActive != WD_6STADIUM && gMapManager.InChaosCastle() == false)
+    if (!Input::FirstPerson::IsCaptured() && g_pOption->IsAutoAttack()
+        && gMapManager.WorldActive != WD_6STADIUM && !gMapManager.InChaosCastle())
     {
         if (SelectedCharacter < 0 || SelectedCharacter >= MAX_CHARACTERS_CLIENT + 1)
         {
@@ -317,6 +316,30 @@ void SelectObjects()
         SelectedCharacter = -1;
         Attacking = -1;
     }
+
+}
+
+void SelectObjects()
+{
+    BYTE CKind_1, CKind_2;
+    if (Input::FirstPerson::BlocksWorldActions())
+    {
+        SelectedCharacter = SelectedItem = SelectedNpc = SelectedOperate = -1;
+        Attacking = -1;
+        return;
+    }
+
+    if (SceneFlag == CHARACTER_SCENE)
+    {
+        SelectedCharacter = SelectCharacter(KIND_PLAYER);
+        SelectedItem = -1;
+        SelectedNpc = -1;
+        SelectedOperate = -1;
+        Attacking = -1;
+        return;
+    }
+
+    UpdateSelectedCharacter();
 
     SelectedItem = -1;
     SelectedNpc = -1;

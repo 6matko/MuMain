@@ -89,7 +89,8 @@ namespace mu::ui::window
             DropdownUIScale = 5,
             DropdownAntialiasing = 6,
             DropdownAnisotropy = 7,
-            DropdownTexturePack = 8,
+            DropdownViewMode = 8,
+            DropdownTexturePack = 9,
             DropdownCount
         };
 
@@ -272,6 +273,10 @@ namespace mu::ui::window
             // mechanism the tab bar above already proves reliable.
             int openDropdown = -1;
 
+            int viewMode = 0;
+            Rml::String viewModeLabel;
+            Rml::String classicViewLabel;
+            Rml::String firstPersonViewLabel;
             bool autoAttack = true;
             Rml::String autoAttackLabel;
             bool whisperSound = false;
@@ -405,6 +410,7 @@ namespace mu::ui::window
         };
         void BindRmlModel(Rml::DataModelConstructor& c, OptionRmlModel& model);
         void SyncImpliedEffectRows(OptionRmlModel& model);
+        void SyncViewMode(OptionRmlModel& model);
         // The model's copy of a UI text, marked dirty when the text changed.
         void SyncLabel(Rml::String& field, const char* fieldName, const wchar_t* text);
         void SyncTuningModel(OptionRmlModel& model);

@@ -1,6 +1,7 @@
 
 #include "stdafx.h"
 #include "Core/Input/KeyState.h"
+#include "Input/FirstPersonInput.h"
 #include "Core/Input/SyntheticInput.h"
 
 #include "UI/Core/WindowCommon.h"
@@ -153,6 +154,8 @@ bool mu::ui::window::IsRelease(int iVirtKey)
 
 bool mu::ui::window::IsPress(int iVirtKey)
 {
+    if (Input::FirstPerson::OwnsMovementKey(iVirtKey))
+        return false;
     return g_pNewKeyInput->IsPress(iVirtKey);
 }
 

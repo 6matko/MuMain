@@ -4,6 +4,7 @@
 #include "CameraManager.h"
 #include "DefaultCamera.h"
 #include "OrbitalCamera.h"
+#include "Input/FirstPersonInput.h"
 #ifdef _EDITOR
 #include "FreeFlyCamera.h"
 #endif
@@ -79,7 +80,9 @@ bool CameraManager::Update()
         UpdateSpectatedCamera();
 #endif
 
-    return m_pActiveCamera->Update();
+    const bool locked = m_FirstPerson.UpdateClassic(*m_pActiveCamera);
+    Input::FirstPerson::UpdateOwnership();
+    return locked;
 }
 
 #ifdef _EDITOR
@@ -181,8 +184,15 @@ bool CameraManager::SetCameraMode(CameraMode mode)
     return true;
 }
 
+ICamera* CameraManager::GetActiveCamera() const
+{
+    return m_FirstPerson.IsEngaged() ? const_cast<FirstPersonCamera*>(&m_FirstPerson) : m_pActiveCamera;
+}
+
 void CameraManager::CycleToNextMode()
 {
+    if (m_FirstPerson.IsEngaged())
+        return;
     CameraMode nextMode = GetNextCameraMode(m_CurrentMode);
     SetCameraMode(nextMode);
 }
@@ -247,7 +257,7 @@ extern "C" CameraManager& CameraManager_Instance()
 extern "C" OrbitalCamera* GetOrbitalCameraInstance()
 {
     auto& manager = CameraManager::Instance();
-    if (manager.GetCurrentMode() == CameraMode::Orbital)
+    if (manager.GetCurrentMode() == CameraMode::Orbital && !manager.FirstPerson().IsEngaged())
     {
         // Safe cast since we know it's the orbital camera
         return static_cast<OrbitalCamera*>(manager.GetActiveCamera());
