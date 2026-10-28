@@ -2005,7 +2005,7 @@ static bool CreateGameWindow()
     const SDL_WindowFlags windowFlags = Core::Platform::BuildSDLWindowFlags(g_bUseWindowMode != TRUE, false);
 
     g_sdlWindow =
-        SDL_CreateWindow("MU Online - Raccoon", static_cast<int>(WindowWidth), static_cast<int>(WindowHeight), windowFlags);
+        SDL_CreateWindow("MU Online", static_cast<int>(WindowWidth), static_cast<int>(WindowHeight), windowFlags);
     Input::FirstPerson::SetGameWindow(g_sdlWindow);
     if (!g_sdlWindow)
     {
