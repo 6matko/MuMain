@@ -34,4 +34,3 @@ int UI::Scaling::MaximumFontPointSize(FontRole role)
 {
     return GetFontPointRange(role).maximum;
 }
-
